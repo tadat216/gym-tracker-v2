@@ -290,15 +290,15 @@ Stage `backend/`. Message: `chore: add backend foundation — FastAPI app, confi
 - Auto-generated: `backend/alembic/script.mako` (by `alembic init`)
 - Create: `backend/alembic/versions/.gitkeep`
 
-- [ ] **Step 1: Initialize Alembic**
+- [x] **Step 1: Initialize Alembic**
 
 Run `alembic init alembic` from `backend/` directory. This generates `alembic.ini` at `backend/alembic.ini` and the `alembic/` directory with `env.py`, `script.mako`, and `versions/`.
 
-- [ ] **Step 2: Edit `backend/alembic.ini`**
+- [x] **Step 2: Edit `backend/alembic.ini`**
 
 Set `sqlalchemy.url` to empty string (will be overridden in `env.py` from settings). Verify `script_location = alembic`.
 
-- [ ] **Step 3: Edit `backend/alembic/env.py`**
+- [x] **Step 3: Edit `backend/alembic/env.py`**
 
 Wire to async engine:
 - Import `settings` from `app.config`, set `target_metadata` to `SQLModel.metadata`
@@ -316,17 +316,17 @@ def run_migrations_online():
     asyncio.run(run_async_migrations())
 ```
 
-- [ ] **Step 4: Add `.gitkeep` to `backend/alembic/versions/`**
+- [x] **Step 4: Add `.gitkeep` to `backend/alembic/versions/`**
 
 Ensures the empty versions directory is tracked by git.
 
-- [ ] **Step 5: Verify Alembic config**
+- [x] **Step 5: Verify Alembic config**
 
 Run: `cd backend && alembic check`
 
 Expected: no errors (may warn about no migrations yet, that's fine).
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 Stage `backend/alembic.ini`, `backend/alembic/`. Message: `chore: configure Alembic for async migrations`.
 
@@ -465,18 +465,18 @@ Stage `frontend/`. Message: `chore: add frontend foundation — Vite, React, Typ
 - Create: `frontend/Dockerfile`
 - Create: `frontend/nginx.conf`
 
-- [ ] **Step 1: Create `frontend/nginx.conf`**
+- [x] **Step 1: Create `frontend/nginx.conf`**
 
 Nginx config: listen on port 80, serve from `/usr/share/nginx/html`, `try_files $uri $uri/ /index.html` for SPA routing.
 
-- [ ] **Step 2: Create `frontend/Dockerfile`**
+- [x] **Step 2: Create `frontend/Dockerfile`**
 
 Multi-stage with two targets:
 - `base` stage: `node:20-alpine`, `WORKDIR /app`, copy `package.json` + `package-lock.json`, run `npm ci`.
 - `dev` target: from base, copy source, expose 5173, CMD runs `npm run dev -- --host 0.0.0.0`.
 - `prod` target: from base, copy source, run `npm run build`. Then new stage `FROM nginx:alpine`, copy `nginx.conf` to `/etc/nginx/conf.d/default.conf`, copy built `dist/` to `/usr/share/nginx/html`.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 Stage `frontend/Dockerfile`, `frontend/nginx.conf`. Message: `chore: add frontend Dockerfile and nginx config`.
 
@@ -491,15 +491,15 @@ Stage `frontend/Dockerfile`, `frontend/nginx.conf`. Message: `chore: add fronten
 - Create: `frontend/tests/e2e/.gitkeep`
 - Create: `frontend/tests/unit/App.test.tsx`
 
-- [ ] **Step 1: Create `frontend/playwright.config.ts`**
+- [x] **Step 1: Create `frontend/playwright.config.ts`**
 
 Config: `baseURL` `http://localhost:5173`, `testDir` `tests/e2e`, optional `webServer` to start dev server on port 5173 for local runs, single browser `chromium`.
 
-- [ ] **Step 2: Create `frontend/orval.config.ts`**
+- [x] **Step 2: Create `frontend/orval.config.ts`**
 
 Config: input from `./openapi.json` (local file fetched by script), output target `src/api`, client type `react-query` (generates hooks using @tanstack/react-query), override base URL from env.
 
-- [ ] **Step 3: Create test directory structure**
+- [x] **Step 3: Create test directory structure**
 
 Create `frontend/tests/unit/` and `frontend/tests/e2e/` directories with `.gitkeep` files.
 
@@ -526,7 +526,7 @@ Run: `cd frontend && npx vitest run tests/unit/App.test.tsx`
 
 Expected: PASS
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 Stage `frontend/playwright.config.ts`, `frontend/orval.config.ts`, `frontend/tests/`. Message: `chore: add frontend test infrastructure — Playwright, Orval, Vitest smoke test`.
 
