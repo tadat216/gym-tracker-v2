@@ -100,7 +100,7 @@ Stage `.gitignore`, `.env.example`, `CLAUDE.md`, `PLANS.md`. Message: `chore: ad
 - Create: `docker-compose.yml`
 - Create: `docker/init-db.sh`
 
-- [ ] **Step 1: Create `docker/init-db.sh`**
+- [x] **Step 1: Create `docker/init-db.sh`**
 
 ```bash
 #!/bin/bash
@@ -114,7 +114,7 @@ EOSQL
 
 Must be executable (`chmod +x`). Mounted to `/docker-entrypoint-initdb.d/` on the postgres container.
 
-- [ ] **Step 2: Create `docker-compose.yml`**
+- [x] **Step 2: Create `docker-compose.yml`**
 
 Services:
 - `postgres`: image `postgres:16-alpine`, port `5432:5432`, volume `pgdata`, env from root `.env`, mounts `docker/init-db.sh` to `/docker-entrypoint-initdb.d/`, healthcheck via `pg_isready`. No profile (always runs).
@@ -126,7 +126,7 @@ Services:
 
 Volumes: `pgdata`, `pgdata-test`.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 Stage `docker-compose.yml`, `docker/init-db.sh`. Message: `chore: add docker compose with dev/prod profiles and DB init`.
 
