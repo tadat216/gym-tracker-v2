@@ -537,7 +537,7 @@ Stage `frontend/playwright.config.ts`, `frontend/orval.config.ts`, `frontend/tes
 **Files:**
 - Create: `scripts/generate-api.sh`
 
-- [ ] **Step 1: Create `scripts/generate-api.sh`**
+- [x] **Step 1: Create `scripts/generate-api.sh`**
 
 ```bash
 #!/bin/bash
@@ -560,11 +560,11 @@ rm -f "$FRONTEND_DIR/openapi.json"
 echo "Done! API client generated in frontend/src/api/"
 ```
 
-- [ ] **Step 2: Make executable**
+- [x] **Step 2: Make executable**
 
 Run: `chmod +x scripts/generate-api.sh`
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 Stage `scripts/generate-api.sh`. Message: `chore: add API generation script`.
 
