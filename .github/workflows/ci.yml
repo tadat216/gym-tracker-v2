@@ -18,13 +18,9 @@ jobs:
         working-directory: backend
     steps:
       - uses: actions/checkout@v4
-
       - uses: astral-sh/setup-uv@v6
-
       - run: uv sync --group dev
-
-      - run: uv run ruff check .
-      - run: uv run ruff format --check .
+      - run: ./scripts/lint.sh
 
   backend-test:
     runs-on: ubuntu-latest
@@ -51,29 +47,36 @@ jobs:
       SECRET_KEY: ci-test-secret
     steps:
       - uses: actions/checkout@v4
-
       - uses: astral-sh/setup-uv@v6
-
       - run: uv sync --group dev
+      - run: ./scripts/test.sh
 
-      - run: uv run pytest tests/ -v
-
-  frontend:
+  frontend-lint:
     runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: frontend
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
           cache-dependency-path: frontend/package-lock.json
-
       - run: npm ci
+      - run: ./scripts/lint.sh
 
-      - run: npx eslint .
-      - run: npx tsc --noEmit
-      - run: npx vitest run
+  frontend-unit-test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - run: ./scripts/unit-test.sh
