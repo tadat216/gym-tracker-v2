@@ -572,15 +572,15 @@ Stage `scripts/generate-api.sh`. Message: `chore: add API generation script`.
 
 ## Task 10: Docker Integration Test
 
-- [ ] **Step 1: Copy `.env.example` files to `.env`**
+- [x] **Step 1: Copy `.env.example` files to `.env`**
 
 Copy root `.env.example` to `.env`, `backend/.env.example` to `backend/.env`, `frontend/.env.example` to `frontend/.env`.
 
-- [ ] **Step 2: Build and start dev profile**
+- [x] **Step 2: Build and start dev profile**
 
 Run: `docker compose --profile dev up --build`
 
-- [ ] **Step 3: Verify all services are healthy**
+- [x] **Step 3: Verify all services are healthy**
 
 Check:
 - `http://localhost:8000/api/v1/health` returns `{"status": "ok"}`
@@ -589,25 +589,25 @@ Check:
 - Postgres on port 5432 accepts connections
 - Postgres-test on port 5433 accepts connections
 
-- [ ] **Step 4: Run backend tests inside container**
+- [x] **Step 4: Run backend tests inside container**
 
 Run: `docker compose exec backend-dev pytest tests/ -v`
 
 Expected: health smoke test passes.
 
-- [ ] **Step 5: Run frontend unit tests inside container**
+- [x] **Step 5: Run frontend unit tests inside container**
 
 Run: `docker compose exec frontend-dev npx vitest run`
 
 Expected: App smoke test passes.
 
-- [ ] **Step 6: Tear down**
+- [x] **Step 6: Tear down**
 
 Run: `docker compose --profile dev down`
 
-- [ ] **Step 7: Final commit (if any fixes were needed)**
+- [x] **Step 7: Final commit (if any fixes were needed)**
 
-Stage all changes. Message: `fix: resolve integration issues from Docker smoke test`.
+No fixes needed — all services healthy, all tests passing.
 
 ---
 
