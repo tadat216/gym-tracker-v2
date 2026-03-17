@@ -23,7 +23,7 @@
 | `docker-compose.yml` | All services, dev + prod profiles |
 | `docker/init-db.sh` | Creates `gym_tracker_dev` DB on first Postgres start |
 | `backend/.env.example` | Backend env vars |
-| `backend/pyproject.toml` | Python deps, pytest config |
+| `backend/pyproject.toml` | Python deps, pytest config (managed by uv) |
 | `backend/ruff.toml` | Ruff linter/formatter settings |
 | `backend/Dockerfile` | Multi-stage: dev + prod targets |
 | `backend/app/__init__.py` | Package marker |
@@ -144,7 +144,7 @@ Stage `docker-compose.yml`, `docker/init-db.sh`. Message: `chore: add docker com
 - Create: `backend/app/database.py`
 - Create: `backend/app/main.py`
 
-- [ ] **Step 1: Create `backend/.env.example`**
+- [x] **Step 1: Create `backend/.env.example`**
 
 ```env
 # Dev default — prod deployment overrides to gym_tracker
@@ -156,7 +156,7 @@ SECRET_KEY=change-me-in-production
 ACCESS_TOKEN_EXPIRE_MINUTES=10080
 ```
 
-- [ ] **Step 2: Create `backend/pyproject.toml`**
+- [x] **Step 2: Create `backend/pyproject.toml`**
 
 ```toml
 [project]
@@ -189,7 +189,7 @@ pythonpath = ["."]
 
 Note: `pyjwt`, `bcrypt`, `mcp[cli]` are intentionally excluded — they belong to the auth and MCP phases.
 
-- [ ] **Step 3: Create `backend/ruff.toml`**
+- [x] **Step 3: Create `backend/ruff.toml`**
 
 ```toml
 line-length = 88
@@ -202,18 +202,18 @@ select = ["E", "F", "I", "UP"]
 quote-style = "double"
 ```
 
-- [ ] **Step 4: Create `backend/Dockerfile`**
+- [x] **Step 4: Create `backend/Dockerfile`**
 
 Multi-stage with two targets:
-- Base stage: `python:3.12-slim`, `WORKDIR /app`, copy `pyproject.toml`, install deps.
-- `dev` target: from base, copy source, CMD runs uvicorn with `--reload` on `0.0.0.0:8000`.
-- `prod` target: from base, copy source, CMD runs uvicorn with `--workers 2` on `0.0.0.0:8000`.
+- Base stage: `python:3.12-slim`, install `uv` via `pip install uv`, `WORKDIR /app`, copy `pyproject.toml`, run `uv sync`.
+- `dev` target: from base, copy source, CMD runs `uv run uvicorn` with `--reload` on `0.0.0.0:8000`.
+- `prod` target: from base, copy source, CMD runs `uv run uvicorn` with `--workers 2` on `0.0.0.0:8000`.
 
-- [ ] **Step 5: Create `backend/app/__init__.py`**
+- [x] **Step 5: Create `backend/app/__init__.py`**
 
 Empty file.
 
-- [ ] **Step 6: Create `backend/app/config.py`**
+- [x] **Step 6: Create `backend/app/config.py`**
 
 ```python
 from pydantic_settings import BaseSettings
@@ -234,7 +234,7 @@ class Settings(BaseSettings):
 settings = Settings()
 ```
 
-- [ ] **Step 7: Create `backend/app/database.py`**
+- [x] **Step 7: Create `backend/app/database.py`**
 
 ```python
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
@@ -248,7 +248,7 @@ async def get_session():
         yield session
 ```
 
-- [ ] **Step 8: Create `backend/app/main.py`**
+- [x] **Step 8: Create `backend/app/main.py`**
 
 ```python
 from fastapi import FastAPI
@@ -270,13 +270,13 @@ async def health():
     return {"status": "ok"}
 ```
 
-- [ ] **Step 9: Verify backend module imports**
+- [x] **Step 9: Verify backend module imports**
 
-Run: `cd backend && pip install -e . && python -c "from app.main import app; print(app.routes)"`
+Run: `cd backend && uv sync && uv run python -c "from app.main import app; print(app.routes)"`
 
 Expected: prints route list including the health endpoint.
 
-- [ ] **Step 10: Commit**
+- [x] **Step 10: Commit**
 
 Stage `backend/`. Message: `chore: add backend foundation — FastAPI app, config, database, Dockerfile`.
 
