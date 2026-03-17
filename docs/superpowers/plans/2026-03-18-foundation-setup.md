@@ -395,21 +395,21 @@ Stage `backend/tests/`. Message: `chore: add backend test infrastructure with he
 - Create: `frontend/src/lib/axios.ts`
 - Create: `frontend/src/api/.gitkeep`
 
-- [ ] **Step 1: Scaffold Vite React-TS project**
+- [x] **Step 1: Scaffold Vite React-TS project**
 
 Run `npm create vite@latest . -- --template react-ts` from `frontend/` directory. If directory not empty, use a temp dir and move files. This generates base Vite + React + TypeScript files including `tsconfig.json`, `tsconfig.node.json`, and `src/vite-env.d.ts`.
 
-- [ ] **Step 2: Install dependencies**
+- [x] **Step 2: Install dependencies**
 
 Run: `npm install react-router-dom @tanstack/react-query axios`
 
-- [ ] **Step 3: Install dev dependencies**
+- [x] **Step 3: Install dev dependencies**
 
 Run: `npm install -D tailwindcss @tailwindcss/vite vitest @testing-library/react @testing-library/jest-dom jsdom @playwright/test orval eslint prettier`
 
 Note: Tailwind v4 with `@tailwindcss/vite` — no `tailwind.config.ts`, no `postcss.config.js` needed. The Vite plugin handles everything.
 
-- [ ] **Step 4: Configure Tailwind v4**
+- [x] **Step 4: Configure Tailwind v4**
 
 Update `frontend/src/App.css`: replace Vite's default styles with:
 
@@ -419,17 +419,17 @@ Update `frontend/src/App.css`: replace Vite's default styles with:
 
 Add `@tailwindcss/vite` plugin to `frontend/vite.config.ts` plugins array.
 
-- [ ] **Step 5: Configure Vite with Vitest**
+- [x] **Step 5: Configure Vite with Vitest**
 
 Update `frontend/vite.config.ts`: add `test` block with `environment: "jsdom"`, `globals: true`, `setupFiles` for testing-library, `include` pattern `tests/unit/**/*.test.{ts,tsx}`.
 
-- [ ] **Step 6: Create `frontend/.env.example`**
+- [x] **Step 6: Create `frontend/.env.example`**
 
 ```env
 VITE_API_URL=http://localhost:8000/api/v1
 ```
 
-- [ ] **Step 7: Create `frontend/src/lib/axios.ts`**
+- [x] **Step 7: Create `frontend/src/lib/axios.ts`**
 
 ```typescript
 import axios from "axios";
@@ -439,21 +439,21 @@ export const api = axios.create({
 });
 ```
 
-- [ ] **Step 8: Create minimal `frontend/src/App.tsx`**
+- [x] **Step 8: Create minimal `frontend/src/App.tsx`**
 
 Simple component that calls `GET /health` on mount via the axios instance and displays "API Status: connected" or "API Status: disconnected". Uses `useEffect` + `useState`, Tailwind classes for centered layout.
 
-- [ ] **Step 9: Create `frontend/src/api/.gitkeep`**
+- [x] **Step 9: Create `frontend/src/api/.gitkeep`**
 
 Placeholder for the Orval-generated API client directory.
 
-- [ ] **Step 10: Verify frontend builds**
+- [x] **Step 10: Verify frontend builds**
 
 Run: `cd frontend && npm run build`
 
 Expected: successful build output in `dist/`.
 
-- [ ] **Step 11: Commit**
+- [x] **Step 11: Commit**
 
 Stage `frontend/`. Message: `chore: add frontend foundation — Vite, React, TypeScript, Tailwind v4`.
 
