@@ -503,7 +503,7 @@ Config: input from `./openapi.json` (local file fetched by script), output targe
 
 Create `frontend/tests/unit/` and `frontend/tests/e2e/` directories with `.gitkeep` files.
 
-- [ ] **Step 4: Write a smoke unit test**
+- [x] **Step 4: Write a smoke unit test**
 
 Create `frontend/tests/unit/App.test.tsx`:
 
@@ -520,7 +520,7 @@ describe("App", () => {
 });
 ```
 
-- [ ] **Step 5: Run unit test**
+- [x] **Step 5: Run unit test**
 
 Run: `cd frontend && npx vitest run tests/unit/App.test.tsx`
 
