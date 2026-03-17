@@ -45,6 +45,7 @@ jobs:
       DATABASE_URL: postgresql+asyncpg://test:test@localhost:5433/gym_tracker_test
       TEST_DATABASE_URL: postgresql+asyncpg://test:test@localhost:5433/gym_tracker_test
       SECRET_KEY: ci-test-secret
+      CORS_ORIGINS: http://localhost:5173
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v6
