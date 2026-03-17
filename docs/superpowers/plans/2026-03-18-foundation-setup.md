@@ -68,11 +68,11 @@
 - Create: `CLAUDE.md`
 - Create: `PLANS.md`
 
-- [ ] **Step 1: Create `.gitignore`**
+- [x] **Step 1: Create `.gitignore`**
 
 Cover: Python bytecode/eggs/venv, Node `node_modules`/`dist`, env files (`.env`, `.env.local`, `.env.*.local`), IDE configs (`.vscode/`, `.idea/`), Docker volumes, OS files (`.DS_Store`), and test artifacts (`.coverage`, `.pytest_cache/`, `test-results/`, `playwright-report/`).
 
-- [ ] **Step 2: Create `.env.example`**
+- [x] **Step 2: Create `.env.example`**
 
 ```env
 POSTGRES_USER=gymtracker
@@ -80,15 +80,15 @@ POSTGRES_PASSWORD=secret
 POSTGRES_DB=gym_tracker
 ```
 
-- [ ] **Step 3: Create `CLAUDE.md`**
+- [x] **Step 3: Create `CLAUDE.md`**
 
 Document project conventions: monorepo layout (`backend/` + `frontend/`), how to run dev/prod via Docker Compose profiles, test commands for backend (pytest) and frontend (vitest, playwright), the env var pattern (Pydantic BaseSettings in `app/config.py`), and the API generation script (`scripts/generate-api.sh`).
 
-- [ ] **Step 4: Create `PLANS.md`**
+- [x] **Step 4: Create `PLANS.md`**
 
 Add this plan as the first entry with status "In Progress".
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 Stage `.gitignore`, `.env.example`, `CLAUDE.md`, `PLANS.md`. Message: `chore: add root config files`.
 
