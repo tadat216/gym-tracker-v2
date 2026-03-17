@@ -341,11 +341,11 @@ Stage `backend/alembic.ini`, `backend/alembic/`. Message: `chore: configure Alem
 - Create: `backend/tests/conftest.py`
 - Create: `backend/tests/test_health.py`
 
-- [ ] **Step 1: Create `backend/tests/__init__.py`**
+- [x] **Step 1: Create `backend/tests/__init__.py`**
 
 Empty file.
 
-- [ ] **Step 2: Create `backend/tests/conftest.py`**
+- [x] **Step 2: Create `backend/tests/conftest.py`**
 
 Define fixtures:
 
@@ -364,7 +364,7 @@ async def client(session):
     ...  # override get_session dep, create httpx.AsyncClient with ASGITransport, yield
 ```
 
-- [ ] **Step 3: Create `backend/tests/test_health.py`**
+- [x] **Step 3: Create `backend/tests/test_health.py`**
 
 ```python
 async def test_health_endpoint(client):
@@ -373,13 +373,13 @@ async def test_health_endpoint(client):
     assert response.json() == {"status": "ok"}
 ```
 
-- [ ] **Step 4: Run the smoke test**
+- [x] **Step 4: Run the smoke test**
 
 Run: `cd backend && pytest tests/test_health.py -v`
 
 Expected: PASS. Note: requires test DB running (postgres-test container on port 5433). If DB isn't running, test will fail with connection error — acceptable at this stage, will work once Docker is up.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 Stage `backend/tests/`. Message: `chore: add backend test infrastructure with health endpoint smoke test`.
 
