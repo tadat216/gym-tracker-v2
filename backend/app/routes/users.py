@@ -51,7 +51,9 @@ async def create_user(
         await session.flush()
     except IntegrityError as exc:
         await session.rollback()
-        raise HTTPException(status_code=409, detail="Username or email already exists") from exc
+        raise HTTPException(
+            status_code=409, detail="Username or email already exists"
+        ) from exc
     return UserRead.model_validate(user)
 
 
@@ -74,7 +76,9 @@ async def update_user(
         await session.flush()
     except IntegrityError as exc:
         await session.rollback()
-        raise HTTPException(status_code=409, detail="Username or email already exists") from exc
+        raise HTTPException(
+            status_code=409, detail="Username or email already exists"
+        ) from exc
     return UserRead.model_validate(user)
 
 
