@@ -10,6 +10,11 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 10080
     CORS_ORIGINS: str
 
+    # Admin seed (used on first startup only)
+    ADMIN_USERNAME: str = "admin"
+    ADMIN_EMAIL: str = "admin@gym-tracker.local"
+    ADMIN_PASSWORD: str = "changeme"
+
     model_config = {"env_file": os.getenv("ENV_FILE", "../.env"), "extra": "ignore"}
 
     @property

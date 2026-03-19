@@ -1,11 +1,35 @@
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from sqlmodel import select
 
+from app.auth.password import hash_password
 from app.config import settings
+from app.database import async_session
+from app.models.user import User
 from app.routes.auth import router as auth_router
 from app.routes.users import router as users_router
 
-app = FastAPI(title="Gym Tracker API")
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    async with async_session() as session:
+        result = await session.execute(select(User).where(User.is_admin == True))  # noqa: E712
+        if result.scalar_one_or_none() is None:
+            admin = User(
+                username=settings.ADMIN_USERNAME,
+                email=settings.ADMIN_EMAIL,
+                password_hash=hash_password(settings.ADMIN_PASSWORD),
+                is_admin=True,
+            )
+            session.add(admin)
+            await session.commit()
+
+    yield
+
+
+app = FastAPI(title="Gym Tracker API", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
