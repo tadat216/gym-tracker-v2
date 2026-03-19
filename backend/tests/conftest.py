@@ -1,36 +1,32 @@
 import os
 import socket
 
-import pytest_asyncio
-from httpx import ASGITransport, AsyncClient
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
-from sqlmodel import SQLModel
+# --- Test safety: set env vars BEFORE any app imports ---
+# Must happen at module level (not in pytest_configure) because
+# app imports below trigger Settings() which reads env vars immediately.
+os.environ.setdefault("ENV_FILE", "../.env.example")
 
-# --- Test safety: load .env.example and block outbound network ---
-# pytest_configure runs before collection/imports, so Settings() will
-# read .env.example instead of .env (which may contain real API keys).
-
+# Block outbound network — allow localhost (test DB), block everything else.
+# Prevents accidentally calling paid third-party APIs during tests.
 _original_connect = socket.socket.connect
 
 
 def _guarded_connect(self, address):
-    """Allow localhost connections (test DB), block everything else."""
     host = address[0] if isinstance(address, tuple) else address
     if host not in ("localhost", "127.0.0.1", "::1"):
         raise RuntimeError(f"Tests blocked outbound connection to {host}")
     return _original_connect(self, address)
 
 
-def pytest_configure(config):
-    os.environ.setdefault("ENV_FILE", "../.env.example")
-    socket.socket.connect = _guarded_connect
+socket.socket.connect = _guarded_connect
 
+# --- App imports (after env vars are set) ---
 
-def pytest_unconfigure(config):
-    socket.socket.connect = _original_connect
-
-
-# --- App imports (after pytest_configure sets ENV_FILE) ---
+import pytest_asyncio  # noqa: E402
+from httpx import ASGITransport, AsyncClient  # noqa: E402
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine  # noqa: E402
+from sqlalchemy.pool import NullPool  # noqa: E402
+from sqlmodel import SQLModel  # noqa: E402
 
 from app.auth.jwt import create_access_token  # noqa: E402
 from app.auth.password import hash_password  # noqa: E402
@@ -42,7 +38,7 @@ from app.models.user import User  # noqa: E402, F401 — registers table with me
 
 @pytest_asyncio.fixture(scope="session")
 async def engine():
-    engine = create_async_engine(settings.TEST_DATABASE_URL)
+    engine = create_async_engine(settings.TEST_DATABASE_URL, poolclass=NullPool)
     async with engine.begin() as conn:
         await conn.run_sync(SQLModel.metadata.create_all)
     yield engine
