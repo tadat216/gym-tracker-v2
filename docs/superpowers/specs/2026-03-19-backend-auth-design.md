@@ -148,6 +148,11 @@ In `main.py`, use FastAPI lifespan:
 3. If not, create one from `ADMIN_USERNAME`, `ADMIN_EMAIL`, `ADMIN_PASSWORD`
 4. Idempotent — safe to run on every startup
 
+## Test Safety
+
+- **Config isolation:** `config.py` reads `ENV_FILE` env var (default `.env`). Tests set `ENV_FILE=.env.example` via `pytest_configure` in conftest, so tests never load real secrets from `.env`.
+- **Network blocking:** `conftest.py` patches `socket.socket.connect` to block all outbound connections except `localhost`/`127.0.0.1`/`::1`. If any code accidentally calls a real third-party API during tests, it fails immediately instead of costing money.
+
 ## Testing Strategy
 
 ### `tests/test_auth.py`

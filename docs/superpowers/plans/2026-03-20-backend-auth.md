@@ -18,7 +18,7 @@
 |------|--------|---------------|
 | `backend/pyproject.toml` | Modify | Add `bcrypt`, `PyJWT` dependencies |
 | `backend/.env.example` | Modify | Add `ADMIN_*` env vars |
-| `backend/app/config.py` | Modify | Add `ADMIN_USERNAME`, `ADMIN_EMAIL`, `ADMIN_PASSWORD` settings |
+| `backend/app/config.py` | Modify | Add `ADMIN_*` settings, configurable env file via `ENV_FILE` |
 | `backend/app/models/__init__.py` | Create | Package init, re-export `User` |
 | `backend/app/models/user.py` | Create | `User` SQLModel table model |
 | `backend/app/schemas/__init__.py` | Create | Package init |
@@ -33,7 +33,7 @@
 | `backend/app/routes/users.py` | Create | Admin CRUD endpoints |
 | `backend/app/main.py` | Modify | Add lifespan (admin seed), register routers |
 | `backend/alembic/env.py` | Modify | Import `User` model for metadata |
-| `backend/tests/conftest.py` | Modify | Import `User`, add auth fixtures |
+| `backend/tests/conftest.py` | Modify | Import `User`, add auth fixtures, load `.env.example`, block outbound network |
 | `backend/tests/test_auth.py` | Create | Auth endpoint tests |
 | `backend/tests/test_users.py` | Create | User CRUD endpoint tests |
 
@@ -387,22 +387,51 @@ async def get_current_admin(
     return user
 ```
 
-- [ ] **Step 2: Update conftest with auth fixtures**
+- [ ] **Step 2: Update conftest with auth fixtures, .env.example loading, and network blocker**
 
-Add User model import and auth fixtures to `backend/tests/conftest.py`. The file should become:
+Add User model import, auth fixtures, test env loading, and outbound network blocking to `backend/tests/conftest.py`. The file should become:
 
 ```python
+import os
+import socket
+
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlmodel import SQLModel
 
-from app.auth.jwt import create_access_token
-from app.auth.password import hash_password
-from app.config import settings
-from app.database import get_session
-from app.main import app
-from app.models.user import User  # noqa: F401 — registers table with metadata
+# --- Test safety: load .env.example and block outbound network ---
+# pytest_configure runs before collection/imports, so Settings() will
+# read .env.example instead of .env (which may contain real API keys).
+
+_original_connect = socket.socket.connect
+
+
+def _guarded_connect(self, address):
+    """Allow localhost connections (test DB), block everything else."""
+    host = address[0] if isinstance(address, tuple) else address
+    if host not in ("localhost", "127.0.0.1", "::1"):
+        raise RuntimeError(f"Tests blocked outbound connection to {host}")
+    return _original_connect(self, address)
+
+
+def pytest_configure(config):
+    os.environ.setdefault("ENV_FILE", ".env.example")
+    socket.socket.connect = _guarded_connect
+
+
+def pytest_unconfigure(config):
+    socket.socket.connect = _original_connect
+
+
+# --- App imports (after pytest_configure sets ENV_FILE) ---
+
+from app.auth.jwt import create_access_token  # noqa: E402
+from app.auth.password import hash_password  # noqa: E402
+from app.config import settings  # noqa: E402
+from app.database import get_session  # noqa: E402
+from app.main import app  # noqa: E402
+from app.models.user import User  # noqa: E402, F401 — registers table with metadata
 
 
 @pytest_asyncio.fixture(scope="session")
@@ -936,15 +965,39 @@ git commit -m "feat(auth): add admin user CRUD endpoints"
 - Modify: `backend/app/main.py`
 - Modify: `backend/.env.example`
 
-- [ ] **Step 1: Add admin settings to config**
+- [ ] **Step 1: Add admin settings and ENV_FILE support to config**
 
-Modify `backend/app/config.py` — add these fields to the `Settings` class:
+Modify `backend/app/config.py` to read `ENV_FILE` env var and add admin fields. The full file should become:
 
 ```python
-ADMIN_USERNAME: str = "admin"
-ADMIN_EMAIL: str = "admin@gym-tracker.local"
-ADMIN_PASSWORD: str = "changeme"
+import os
+
+from pydantic_settings import BaseSettings
+
+
+class Settings(BaseSettings):
+    DATABASE_URL: str
+    TEST_DATABASE_URL: str
+    SECRET_KEY: str
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 10080
+    CORS_ORIGINS: str
+
+    # Admin seed (used on first startup only)
+    ADMIN_USERNAME: str = "admin"
+    ADMIN_EMAIL: str = "admin@gym-tracker.local"
+    ADMIN_PASSWORD: str = "changeme"
+
+    model_config = {"env_file": os.getenv("ENV_FILE", ".env")}
+
+    @property
+    def cors_origins_list(self) -> list[str]:
+        return [origin.strip() for origin in self.CORS_ORIGINS.split(",")]
+
+
+settings = Settings()
 ```
+
+This allows tests to set `ENV_FILE=.env.example` (via `conftest.py`'s `pytest_configure`) so that tests never read real secrets from `.env`.
 
 - [ ] **Step 2: Update .env.example**
 
