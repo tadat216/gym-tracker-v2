@@ -1,3 +1,5 @@
+import os
+
 from pydantic_settings import BaseSettings
 
 
@@ -8,7 +10,7 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 10080
     CORS_ORIGINS: str
 
-    model_config = {"env_file": ".env"}
+    model_config = {"env_file": os.getenv("ENV_FILE", "../.env"), "extra": "ignore"}
 
     @property
     def cors_origins_list(self) -> list[str]:
