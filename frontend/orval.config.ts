@@ -6,11 +6,15 @@ export default defineConfig({
       target: "./openapi.json",
     },
     output: {
-      target: "src/api",
+      workspace: "src/api",
+      target: "./gymTracker.ts",
       client: "react-query",
+      mode: "tags-split",
+      indexFiles: true,
+      schemas: "./model",
       override: {
         mutator: {
-          path: "./src/lib/axios.ts",
+          path: "../lib/axios.ts",
           name: "api",
         },
       },
