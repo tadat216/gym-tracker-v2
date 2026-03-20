@@ -21,7 +21,6 @@ docker compose --profile prod up --build
 Copy `.env.example` files before first run:
 ```bash
 cp .env.example .env
-cp backend/.env.example backend/.env
 cp frontend/.env.example frontend/.env
 ```
 
@@ -45,7 +44,7 @@ cd frontend && npx playwright test
 
 ## Environment Variables
 
-Backend uses Pydantic BaseSettings (`app/config.py`) which reads from `backend/.env`. All config is centralized in the `Settings` class.
+Backend uses Pydantic BaseSettings (`app/config.py`) which reads from the root `.env`. All config is centralized in the `Settings` class. The root `.env` contains both Postgres container config and backend application config.
 
 ## API Client Generation
 

@@ -1,11 +1,15 @@
-import pytest_asyncio
-from httpx import ASGITransport, AsyncClient
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
-from sqlmodel import SQLModel
+import os
 
-from app.config import settings
-from app.database import get_session
-from app.main import app
+os.environ.setdefault("ENV_FILE", "../.env.example")
+
+import pytest_asyncio  # noqa: E402
+from httpx import ASGITransport, AsyncClient  # noqa: E402
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine  # noqa: E402
+from sqlmodel import SQLModel  # noqa: E402
+
+from app.config import settings  # noqa: E402
+from app.database import get_session  # noqa: E402
+from app.main import app  # noqa: E402
 
 
 @pytest_asyncio.fixture(scope="session")
