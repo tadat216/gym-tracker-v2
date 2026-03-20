@@ -9,7 +9,7 @@ services:
       - pgdata:/var/lib/postgresql/data
       - ./docker/init-db.sh:/docker-entrypoint-initdb.d/init-db.sh
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER:-postgres}"]
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER:-postgres} -d $${POSTGRES_DB:-postgres}"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -25,7 +25,7 @@ services:
     volumes:
       - pgdata-test:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER:-postgres}"]
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER:-postgres} -d $${POSTGRES_DB:-postgres}"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -42,6 +42,9 @@ services:
       - ./backend:/app
     env_file:
       - .env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://gymtracker:secret@postgres:5432/gym_tracker
+      TEST_DATABASE_URL: postgresql+asyncpg://gymtracker:secret@postgres-test:5432/gym_tracker_test
     depends_on:
       postgres:
         condition: service_healthy
@@ -70,6 +73,8 @@ services:
       - "8000:8000"
     env_file:
       - .env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://gymtracker:secret@postgres:5432/gym_tracker
     depends_on:
       postgres:
         condition: service_healthy
