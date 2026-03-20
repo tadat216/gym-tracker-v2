@@ -13,7 +13,7 @@ from app.schemas.user import UserCreate, UserRead, UserUpdate
 router = APIRouter(prefix="/api/v1/users", tags=["users"])
 
 
-@router.get("", response_model=list[UserRead])
+@router.get("", response_model=list[UserRead], operation_id="listUsers")
 async def list_users(
     session: AsyncSession = Depends(get_session),
     _: User = Depends(get_current_admin),
@@ -23,7 +23,7 @@ async def list_users(
     return [UserRead.model_validate(u) for u in users]
 
 
-@router.get("/{user_id}", response_model=UserRead)
+@router.get("/{user_id}", response_model=UserRead, operation_id="getUser")
 async def get_user(
     user_id: int,
     session: AsyncSession = Depends(get_session),
@@ -35,7 +35,7 @@ async def get_user(
     return UserRead.model_validate(user)
 
 
-@router.post("", response_model=UserRead, status_code=201)
+@router.post("", response_model=UserRead, status_code=201, operation_id="createUser")
 async def create_user(
     body: UserCreate,
     session: AsyncSession = Depends(get_session),
@@ -57,7 +57,7 @@ async def create_user(
     return UserRead.model_validate(user)
 
 
-@router.patch("/{user_id}", response_model=UserRead)
+@router.patch("/{user_id}", response_model=UserRead, operation_id="updateUser")
 async def update_user(
     user_id: int,
     body: UserUpdate,
@@ -82,7 +82,7 @@ async def update_user(
     return UserRead.model_validate(user)
 
 
-@router.delete("/{user_id}", response_model=MessageResponse)
+@router.delete("/{user_id}", response_model=MessageResponse, operation_id="deleteUser")
 async def delete_user(
     user_id: int,
     session: AsyncSession = Depends(get_session),
