@@ -41,8 +41,6 @@ frontend/
 │   └── unit/
 │       ├── stores/
 │       │   └── auth-store.test.ts            # CREATE
-│       ├── lib/
-│       │   └── axios.test.ts                 # CREATE
 │       ├── hooks/
 │       │   └── use-auth.test.tsx             # CREATE
 │       ├── components/
@@ -76,13 +74,13 @@ Each task below follows this cycle explicitly. You'll see: write test → see it
 **Files:**
 - Modify: `frontend/package.json`
 
-- [ ] **Step 1: Install zustand and @testing-library/user-event**
+- [x] **Step 1: Install zustand and @testing-library/user-event**
 
 ```bash
 cd frontend && npm install zustand && npm install -D @testing-library/user-event
 ```
 
-- [ ] **Step 2: Set up test infrastructure**
+- [x] **Step 2: Set up test infrastructure**
 
 Add the jest-dom setup file. Create `frontend/tests/setup.ts`:
 
@@ -96,7 +94,7 @@ Update `frontend/vite.config.ts` — change `setupFiles: []` to:
 setupFiles: ["./tests/setup.ts"],
 ```
 
-- [ ] **Step 3: Verify installation**
+- [x] **Step 3: Verify installation**
 
 ```bash
 cd frontend && npx vitest run
@@ -104,7 +102,7 @@ cd frontend && npx vitest run
 
 Expected: existing tests still pass.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add frontend/package.json frontend/package-lock.json frontend/tests/setup.ts frontend/vite.config.ts
@@ -125,7 +123,7 @@ This is the simplest piece — no API calls, no side effects. Just state + sette
 
 ### TDD Cycle 1: Initial state
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Create `frontend/tests/unit/stores/auth-store.test.ts`:
 
@@ -147,7 +145,7 @@ describe("auth-store", () => {
 });
 ```
 
-- [ ] **Step 2: Run test — see it fail (RED)**
+- [x] **Step 2: Run test — see it fail (RED)**
 
 ```bash
 cd frontend && npx vitest run tests/unit/stores/auth-store.test.ts
@@ -268,74 +266,12 @@ git commit -m "feat(frontend): add auth Zustand store with TDD"
 
 ## Task 3: Fix API Mutator (axios.ts)
 
-The current `api` function accepts `(config: AxiosRequestConfig)` but Orval generates calls like `api(url, { method, headers, body })`. This mismatch must be fixed.
+The current `api` function accepts `(config: AxiosRequestConfig)` but Orval generates calls like `api(url, { method, headers, body })`. This mismatch must be fixed. No TDD here — this is infrastructure glue. We verify correctness via existing tests and the smoke test in Task 10.
 
 **Files:**
-- Create: `frontend/tests/unit/lib/axios.test.ts`
 - Modify: `frontend/src/lib/axios.ts`
 
-### TDD Cycle 1: fetch-style signature
-
-- [ ] **Step 1: Write the failing test**
-
-Create `frontend/tests/unit/lib/axios.test.ts`:
-
-```typescript
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import Axios from "axios";
-
-// We need to mock axios before importing our module
-vi.mock("axios");
-
-const mockAxios = {
-  interceptors: {
-    request: { use: vi.fn() },
-    response: { use: vi.fn() },
-  },
-  request: vi.fn(),
-};
-
-vi.mocked(Axios.create).mockReturnValue(mockAxios as any);
-
-describe("api mutator", () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
-  it("translates fetch-style (url, init) to an axios request", async () => {
-    mockAxios.request.mockResolvedValueOnce({
-      data: { access_token: "tok123" },
-    });
-
-    // Dynamic import to get fresh module with mocks applied
-    const { api } = await import("../../../src/lib/axios");
-
-    const result = await api("/api/v1/auth/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username: "admin", password: "pass" }),
-    });
-
-    expect(mockAxios.request).toHaveBeenCalledWith({
-      url: "/api/v1/auth/login",
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      data: JSON.stringify({ username: "admin", password: "pass" }),
-    });
-    expect(result).toEqual({ access_token: "tok123" });
-  });
-});
-```
-
-- [ ] **Step 2: Run test — see it fail (RED)**
-
-```bash
-cd frontend && npx vitest run tests/unit/lib/axios.test.ts
-```
-
-Expected: **FAIL** — the current `api` function doesn't accept `(url, init)` signature.
-
-- [ ] **Step 3: Rewrite the api mutator (GREEN)**
+- [ ] **Step 1: Rewrite the api mutator**
 
 Replace the contents of `frontend/src/lib/axios.ts`:
 
@@ -384,44 +320,26 @@ export const api = <T>(url: string, init?: RequestInit): Promise<T> =>
     .then((response) => response.data);
 ```
 
-- [ ] **Step 4: Run test — see it pass (GREEN)**
+- [ ] **Step 2: Verify existing tests still pass**
 
 ```bash
-cd frontend && npx vitest run tests/unit/lib/axios.test.ts
+cd frontend && npx vitest run
 ```
 
-Expected: **PASS**
+Expected: **PASS** — all existing tests still work.
 
-### TDD Cycle 2: Auth header injection
-
-- [ ] **Step 5: Add test for token injection**
-
-> **TDD lesson:** The interceptor tests here verify *wiring* — that the interceptor registration code runs. Since we mock the full Axios instance, we can't run the actual interceptor callbacks in this test. That's OK for unit tests. The real interceptor behavior gets tested during the Task 10 smoke test (integration). This is a common tradeoff: unit tests check structure, integration tests check behavior.
-
-Add to `axios.test.ts`, inside the `describe` block:
-
-```typescript
-  it("registers request and response interceptors", async () => {
-    await import("../../../src/lib/axios");
-
-    // Verify that interceptors were registered on the axios instance
-    expect(mockAxios.interceptors.request.use).toHaveBeenCalledTimes(1);
-    expect(mockAxios.interceptors.response.use).toHaveBeenCalledTimes(1);
-  });
-```
-
-- [ ] **Step 6: Run tests — should pass**
+- [ ] **Step 3: Run TypeScript check**
 
 ```bash
-cd frontend && npx vitest run tests/unit/lib/axios.test.ts
+cd frontend && npx tsc -b
 ```
 
-Expected: **PASS** (both tests)
+Expected: no errors. This confirms the new signature is compatible with Orval-generated code.
 
-- [ ] **Step 7: Commit**
+- [ ] **Step 4: Commit**
 
 ```bash
-git add frontend/src/lib/axios.ts frontend/tests/unit/lib/axios.test.ts
+git add frontend/src/lib/axios.ts
 git commit -m "feat(frontend): fix api mutator for Orval fetch-style + add interceptors"
 ```
 
