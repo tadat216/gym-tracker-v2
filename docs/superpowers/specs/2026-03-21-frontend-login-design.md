@@ -13,6 +13,7 @@ Mobile-first login page for the gym tracker app using shadcn/ui components, Zust
 - **Route protection:** Entire app requires login; unauthenticated users always see login page
 - **Registration:** None — users are created by admin only
 - **Target:** Mobile-first (mobile is the only priority)
+- **Component pattern:** Hooks/Types/Views/Container — hooks own data + behavior, types define contracts, views are pure rendering (props only, no hooks), container bridges hooks → views. Route files are thin wrappers.
 
 ## Dependencies to Install
 
@@ -71,14 +72,13 @@ Returns:
   - user: UserRead | null (from store)
   - isAuthenticated: boolean (derived: token !== null)
   - isLoading: boolean (true during initialize or login)
-  - login(username, password) → uses useLogin().mutateAsync() → stores token in localStorage + store → fetches user via raw getMe() function → sets user in store
+  - login(username, password) → calls raw login() function → stores token in localStorage + store → fetches user via raw getMe() function → sets user in store
   - logout() → clears localStorage + store
   - initialize() → reads token from localStorage → sets token in store → validates via raw getMe() function → sets user on success, or catches 401 and calls clear() directly (does NOT rely on the interceptor for this)
 ```
 
-**Important hook vs function distinction:**
-- `login()` action uses `useLogin().mutateAsync()` — the hook is called at the top level of `useAuth`, and `mutateAsync` is used inside the login function
-- `initialize()` calls the raw `getMe()` function (not the `useGetMe` hook) because it runs once on mount and doesn't need reactive caching
+**Why raw functions instead of hooks:**
+- Both `login()` and `initialize()` call the raw Orval-generated functions directly (not `useLogin`/`useGetMe` hooks). Since auth state lives in Zustand (not TanStack Query cache), the hook wrappers provide no benefit — they would add complexity without value.
 - `initialize()` catches 401 errors from `getMe()` and calls `clear()` directly, avoiding the 401 interceptor loop
 
 ### 3. Route Protection
@@ -93,11 +93,38 @@ Returns:
 **Login route** (`/login`) is the only route accessible without auth.
 **If already authenticated and on `/login`:** redirect to `/`.
 
-### 4. Login Page — Mobile-First
+### 4. Login Page — Mobile-First (Hooks/Types/Views/Container Pattern)
 
-**File:** `src/routes/login.tsx`
+Following the frontend component structure skill:
 
-**Layout:**
+```
+src/components/login/
+├── hooks/
+│   └── index.ts              # re-exports useAuth (from src/hooks/use-auth.ts)
+├── types.ts                  # LoginFormProps
+├── views/
+│   ├── login-form.tsx        # pure rendering — props only, no hooks
+│   └── index.ts              # re-exports views
+├── container.tsx             # calls useAuth, passes props to views, handles redirects
+└── index.ts                  # public API — exports container
+```
+
+**Note:** `useAuth` lives in `src/hooks/use-auth.ts` (not inside this component) because it's shared across the app (root route, login, future components). The login component's `hooks/index.ts` re-exports it for local convenience.
+
+**Route file:** `src/routes/login.tsx` is a thin wrapper that imports and renders `<Login />` from `src/components/login/`. TanStack Router requires the route file, but all logic lives in the component.
+
+#### types.ts
+
+```
+LoginFormProps:
+  - onSubmit(username: string, password: string): void
+  - isLoading: boolean
+  - error: string | null
+```
+
+#### views/login-form.tsx (pure rendering — no hooks)
+- Receives `LoginFormProps` — no hooks, no side effects
+- Local UI state for password visibility toggle is acceptable (UI-only `useState`)
 - Full viewport height, vertically centered content
 - No card wrapper on mobile — padded content directly on screen
 - Large touch-friendly inputs and buttons (min 44px height)
@@ -113,30 +140,33 @@ Returns:
 - Password: `type="password"` / `type="text"` toggle, `autocomplete="current-password"`, required
 - Password visibility toggle: eye/eye-off icon button, thumb-friendly size
 
-**Behavior:**
-- HTML required attribute for validation (no fancy client-side validation)
-- Submit calls `login()` from `useAuth()`
-- On success: redirect to `/`
-- On error: show "Invalid username or password" message below the form
-- Button shows loading spinner while request is in flight
-- If user is already authenticated: redirect to `/`
-
 **Mobile considerations:**
 - `inputmode` and `type` attributes for correct mobile keyboards
 - `autocomplete` attributes for mobile autofill
 - Touch targets minimum 44px
 - Verify responsive viewport meta tag exists
 
+#### container.tsx (bridges hooks → views)
+- Calls `useAuth()` hook
+- Handles form submission → calls `login()`
+- Manages error state from failed login
+- Redirects to `/` on success or if already authenticated
+- Passes `onSubmit`, `isLoading`, `error` as props to `LoginForm` view
+
 ## Components to Create
 
-| Component | File | Purpose |
-|-----------|------|---------|
-| API mutator fix | `src/lib/axios.ts` | Fix fetch-style signature + interceptors |
-| Auth store | `src/stores/auth-store.ts` | Pure Zustand state for token + user |
-| useAuth hook | `src/hooks/use-auth.ts` | Orchestrates login/logout/initialize |
-| Login page | `src/routes/login.tsx` | Login form route |
-| Root route update | `src/routes/__root.tsx` | Auth gate + loading state |
-| Remove App.tsx | `src/App.tsx` | Dead code — TanStack Router doesn't use it |
+| Component | Layer | File | Purpose |
+|-----------|-------|------|---------|
+| API mutator fix | infra | `src/lib/axios.ts` | Fix fetch-style signature + interceptors |
+| Auth store | state | `src/stores/auth-store.ts` | Pure Zustand state for token + user |
+| useAuth hook | hook | `src/hooks/use-auth.ts` | Shared orchestration: login/logout/initialize |
+| Login types | types | `src/components/login/types.ts` | LoginFormProps interface |
+| LoginForm view | view | `src/components/login/views/login-form.tsx` | Pure rendering (props only) |
+| Login container | container | `src/components/login/container.tsx` | Calls hooks, passes props to views |
+| Login index | export | `src/components/login/index.ts` | Public API |
+| Login route | route | `src/routes/login.tsx` | Thin wrapper rendering Login container |
+| Root route update | route | `src/routes/__root.tsx` | Auth gate + loading state |
+| Remove App.tsx | cleanup | `src/App.tsx` | Dead code — TanStack Router doesn't use it |
 
 ## Testing Strategy (TDD)
 
@@ -144,8 +174,9 @@ Since this project is learning TDD, tests are written before implementation:
 
 1. **Auth store tests** — verify setToken, setUser, clear behaviors. No mocks needed (pure state).
 2. **useAuth hook tests** — mock the raw Orval-generated functions (`login`, `getMe`) and the `useLogin` hook. Verify login/logout/initialize flows including 401 handling during initialize.
-3. **Login page tests** — mock `useAuth` hook return values. Test form rendering, submission, error display, password visibility toggle.
-4. **Axios interceptor tests** — mock Zustand store's `getState()`, verify header injection with token present/absent, verify 401 triggers store clear.
+3. **LoginForm view tests** — no mocks needed for hooks. Pass props directly. Test form rendering, password visibility toggle, onSubmit callback fired with correct values, error message display, loading state on button.
+4. **Login container tests** — mock `useAuth` hook return values. Test that it renders LoginForm with correct props, handles redirect on success, redirects if already authenticated.
+5. **Axios interceptor tests** — mock Zustand store's `getState()`, verify header injection with token present/absent, verify 401 triggers store clear.
 
 ## Backend API Reference
 
