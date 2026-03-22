@@ -1035,6 +1035,8 @@ git commit -m "feat(frontend): add LoginForm view component with TDD"
 
 The container wires `useAuth` (auth state) + `useLoginForm` (form state) → `LoginForm` (view). No local state — everything comes from hooks.
 
+**Redirect logic lives in routes, not components.** Instead of `useEffect` + `useNavigate` in the container, we use TanStack Router's `beforeLoad` with `useAuthStore.getState()`. Zustand stores are plain JS objects accessible outside React, so `beforeLoad` (a non-React function) can read them directly. This prevents the login form from rendering at all when already authenticated — no flash, no timing issues.
+
 **Files:**
 - Create: `frontend/tests/unit/components/login/container.test.tsx`
 - Create: `frontend/src/components/login/container.tsx`
@@ -1071,12 +1073,6 @@ vi.mock("@/hooks/use-auth", () => ({
   useAuth: (...args: any[]) => mockUseAuth(...args),
 }));
 
-// Mock TanStack Router navigate
-const mockNavigate = vi.fn();
-vi.mock("@tanstack/react-router", () => ({
-  useNavigate: () => mockNavigate,
-}));
-
 describe("Login Container", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -1088,14 +1084,16 @@ describe("Login Container", () => {
     const { LoginContainer } = await import("@/components/login/container");
     render(<LoginContainer />);
 
-    await user.type(screen.getByLabelText(/username/i), "admin");
-    await user.type(screen.getByLabelText(/password/i), "secret");
+    await user.type(screen.getByLabelText("Username"), "admin");
+    await user.type(screen.getByLabelText("Password"), "secret");
     await user.click(screen.getByRole("button", { name: /sign in/i }));
 
     expect(mockLogin).toHaveBeenCalledWith("admin", "secret");
   });
 });
 ```
+
+> **No `useNavigate` mock needed.** Redirect logic is handled by `beforeLoad` in the route definition, not by the container component. The container only renders the form and wires hooks.
 
 - [ ] **Step 2: Run test — see it fail (RED)**
 
@@ -1110,25 +1108,13 @@ Expected: **FAIL** — module not found.
 Create `frontend/src/components/login/container.tsx`:
 
 ```tsx
-import { useEffect } from "react";
-import { useNavigate } from "@tanstack/react-router";
 import { useAuth } from "@/hooks/use-auth";
 import { useLoginForm } from "./hooks";
 import { LoginForm } from "./views";
 
-export function LoginContainer(): React.JSX.Element | null {
-  const { login, isLoggingIn, loginError, isAuthenticated } = useAuth();
+export function LoginContainer(): React.JSX.Element {
+  const { login, isLoggingIn, loginError } = useAuth();
   const form = useLoginForm(login);
-  const navigate = useNavigate();
-
-  // Redirect if already authenticated
-  useEffect(() => {
-    if (isAuthenticated) {
-      navigate({ to: "/" });
-    }
-  }, [isAuthenticated, navigate]);
-
-  if (isAuthenticated) return null;
 
   return (
     <LoginForm
@@ -1146,7 +1132,7 @@ export function LoginContainer(): React.JSX.Element | null {
 }
 ```
 
-> **The container owns zero state.** `useAuth` provides auth state (from TanStack Query), `useLoginForm` provides form state, and `LoginForm` renders it all. Each layer has one job.
+> **The container owns zero state and zero navigation logic.** `useAuth` provides auth state (from TanStack Query), `useLoginForm` provides form state, and `LoginForm` renders it all. Each layer has one job. Redirects are handled by the route's `beforeLoad`.
 
 Create `frontend/src/components/login/index.ts`:
 
@@ -1197,54 +1183,29 @@ cd frontend && npx vitest run tests/unit/components/login/container.test.tsx
 
 Expected: **PASS** (both tests)
 
-### TDD Cycle 3: redirects if already authenticated
-
-- [ ] **Step 7: Add test for redirect**
-
-Add to `container.test.tsx`:
-
-```tsx
-  it("redirects to / when already authenticated", async () => {
-    mockUseAuth.mockReturnValueOnce({
-      user: { id: 1, username: "admin", email: "a@b.com", is_admin: true, created_at: "" },
-      token: "some-token",
-      isAuthenticated: true,
-      isInitializing: false,
-      isLoggingIn: false,
-      loginError: null,
-      login: mockLogin,
-      logout: vi.fn(),
-    } satisfies UseAuthReturn);
-
-    const { LoginContainer } = await import("@/components/login/container");
-    render(<LoginContainer />);
-
-    expect(mockNavigate).toHaveBeenCalledWith({ to: "/" });
-  });
-```
-
-- [ ] **Step 8: Run tests — should pass**
-
-```bash
-cd frontend && npx vitest run tests/unit/components/login/container.test.tsx
-```
-
-Expected: **PASS** (all 3)
-
-- [ ] **Step 9: Create the route file**
+- [ ] **Step 7: Create the route file with beforeLoad redirect**
 
 Create `frontend/src/routes/login.tsx`:
 
 ```tsx
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, redirect } from "@tanstack/react-router";
+import { useAuthStore } from "@/stores/auth-store";
 import { LoginContainer } from "@/components/login";
 
 export const Route = createFileRoute("/login")({
+  beforeLoad: () => {
+    const { token } = useAuthStore.getState();
+    if (token) {
+      throw redirect({ to: "/" });
+    }
+  },
   component: LoginContainer,
 });
 ```
 
-- [ ] **Step 10: Commit**
+> **Why `token` instead of `isAuthenticated`?** `isAuthenticated` requires both token AND user (from `useGetMe`), but `useGetMe` is a React hook — it only runs inside components. In `beforeLoad`, we only have access to the Zustand store's synchronous state. If a token exists, the user was previously authenticated — redirect them to `/` where `useGetMe` will validate the token. If the token turns out to be invalid, the axios 401 interceptor will clear it.
+
+- [ ] **Step 8: Commit**
 
 ```bash
 git add frontend/src/components/login/ frontend/src/routes/login.tsx frontend/tests/unit/components/login/
@@ -1255,7 +1216,9 @@ git commit -m "feat(frontend): add login container, route, and component wiring 
 
 ## Task 8: Route Protection in __root.tsx
 
-Gate the entire app behind authentication.
+Gate the entire app behind authentication using TanStack Router's `beforeLoad` — not `useEffect`.
+
+**Why `beforeLoad` instead of `useEffect`?** `beforeLoad` runs before the component renders, so unauthenticated users never see a flash of protected content. It's declarative (route config, not imperative side effects) and avoids timing issues with `useEffect`. Zustand's `useAuthStore.getState()` gives us synchronous access to the token outside of React.
 
 **Files:**
 - Modify: `frontend/src/routes/__root.tsx`
@@ -1265,24 +1228,18 @@ Gate the entire app behind authentication.
 Replace `frontend/src/routes/__root.tsx`:
 
 ```tsx
-import { createRootRoute, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
+import { createRootRoute, Outlet, redirect, useRouterState } from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
-import { useEffect } from "react";
+import { useAuthStore } from "@/stores/auth-store";
 import { useAuth } from "@/hooks/use-auth";
 
 function RootComponent(): React.JSX.Element {
-  const { isAuthenticated, isInitializing } = useAuth();
-  const navigate = useNavigate();
+  const { isInitializing } = useAuth();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
 
-  // Redirect to /login if not authenticated (but don't redirect if already on /login — avoids infinite loop)
-  useEffect(() => {
-    if (!isInitializing && !isAuthenticated && pathname !== "/login") {
-      navigate({ to: "/login" });
-    }
-  }, [isInitializing, isAuthenticated, navigate, pathname]);
-
-  if (isInitializing) {
+  // Show loading spinner while validating token (useGetMe in flight)
+  // Skip for /login — no token validation needed there
+  if (isInitializing && pathname !== "/login") {
     return (
       <div className="flex min-h-dvh items-center justify-center">
         <p className="text-muted-foreground">Loading...</p>
@@ -1299,11 +1256,21 @@ function RootComponent(): React.JSX.Element {
 }
 
 export const Route = createRootRoute({
+  beforeLoad: ({ location }) => {
+    const { token } = useAuthStore.getState();
+    if (!token && location.pathname !== "/login") {
+      throw redirect({ to: "/login" });
+    }
+  },
   component: RootComponent,
 });
 ```
 
-> **No `initialize()` call** — `useGetMe({ enabled: !!token })` inside `useAuth` auto-fires when the token is rehydrated from localStorage. `isInitializing` is true while the request is in flight.
+> **How the pieces fit together:**
+> - `beforeLoad` checks the Zustand store synchronously — if no token and not on `/login`, redirect immediately. No component renders, no flash.
+> - `RootComponent` handles the `isInitializing` spinner — when a token exists but `useGetMe` hasn't returned yet, show "Loading..." so users don't see an empty shell.
+> - If `useGetMe` fails with 401 → the axios interceptor clears the token → next navigation triggers `beforeLoad` → redirects to `/login`.
+> - The `/login` route has its own `beforeLoad` (Task 7) that redirects *away* if a token exists — preventing authenticated users from seeing the login form.
 
 - [ ] **Step 2: Run all unit tests**
 
@@ -1362,7 +1329,7 @@ describe("App routing", () => {
   it("redirects to login when not authenticated", async () => {
     useAuthStore.setState({ token: null, user: null });
     renderWithRouter("/");
-    expect(await screen.findByLabelText(/username/i)).toBeDefined();
+    expect(await screen.findByLabelText("Username")).toBeDefined();
   });
 });
 ```
