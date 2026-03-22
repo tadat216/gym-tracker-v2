@@ -603,7 +603,7 @@ Split into two parts: `useLoginForm` (form state + submit logic) and `LoginForm`
 
 ### TDD Cycle 1: handleSubmit calls onSubmit with field values
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Create `frontend/tests/unit/components/login/use-login-form.test.ts`:
 
@@ -638,7 +638,7 @@ describe("useLoginForm", () => {
 });
 ```
 
-- [ ] **Step 2: Run test — see it fail (RED)**
+- [x] **Step 2: Run test — see it fail (RED)**
 
 ```bash
 cd frontend && npx vitest run tests/unit/components/login/use-login-form.test.ts
@@ -646,7 +646,7 @@ cd frontend && npx vitest run tests/unit/components/login/use-login-form.test.ts
 
 Expected: **FAIL** — module not found.
 
-- [ ] **Step 3: Create types.ts and the hook (GREEN)**
+- [x] **Step 3: Create types.ts and the hook (GREEN)**
 
 Create `frontend/src/components/login/types.ts`:
 
@@ -716,7 +716,7 @@ Create `frontend/src/components/login/hooks/index.ts`:
 export { useLoginForm } from "./use-login-form";
 ```
 
-- [ ] **Step 4: Run test — see it pass (GREEN)**
+- [x] **Step 4: Run test — see it pass (GREEN)**
 
 ```bash
 cd frontend && npx vitest run tests/unit/components/login/use-login-form.test.ts
@@ -726,7 +726,7 @@ Expected: **PASS**
 
 ### TDD Cycle 2: password visibility toggle
 
-- [ ] **Step 5: Add test for togglePassword**
+- [x] **Step 5: Add test for togglePassword**
 
 Add to the `describe` block:
 
@@ -751,7 +751,7 @@ Add to the `describe` block:
   });
 ```
 
-- [ ] **Step 6: Run tests — should pass**
+- [x] **Step 6: Run tests — should pass**
 
 ```bash
 cd frontend && npx vitest run tests/unit/components/login/use-login-form.test.ts
@@ -761,7 +761,7 @@ Expected: **PASS** (both tests)
 
 ### TDD Cycle 3: handleSubmit calls preventDefault
 
-- [ ] **Step 7: Add test for preventDefault**
+- [x] **Step 7: Add test for preventDefault**
 
 Add to the `describe` block:
 
@@ -780,7 +780,7 @@ Add to the `describe` block:
   });
 ```
 
-- [ ] **Step 8: Run tests — should pass**
+- [x] **Step 8: Run tests — should pass**
 
 ```bash
 cd frontend && npx vitest run tests/unit/components/login/use-login-form.test.ts
@@ -788,7 +788,7 @@ cd frontend && npx vitest run tests/unit/components/login/use-login-form.test.ts
 
 Expected: **PASS** (all 3)
 
-- [ ] **Step 9: Commit**
+- [x] **Step 9: Commit**
 
 ```bash
 git add frontend/src/components/login/types.ts frontend/src/components/login/hooks/ frontend/tests/unit/components/login/use-login-form.test.ts
@@ -803,7 +803,7 @@ The view receives ALL data as props — no hooks, no state, no logic. Just rende
 
 ### TDD Cycle 4: renders form fields
 
-- [ ] **Step 10: Write the failing test**
+- [x] **Step 10: Write the failing test**
 
 Create `frontend/tests/unit/components/login/login-form.test.tsx`:
 
@@ -835,7 +835,7 @@ describe("LoginForm", () => {
 });
 ```
 
-- [ ] **Step 11: Run test — see it fail (RED)**
+- [x] **Step 11: Run test — see it fail (RED)**
 
 ```bash
 cd frontend && npx vitest run tests/unit/components/login/login-form.test.tsx
@@ -843,7 +843,7 @@ cd frontend && npx vitest run tests/unit/components/login/login-form.test.tsx
 
 Expected: **FAIL** — module not found.
 
-- [ ] **Step 12: Write minimal LoginForm (GREEN)**
+- [x] **Step 12: Write minimal LoginForm (GREEN)**
 
 Create `frontend/src/components/login/views/login-form.tsx`:
 
@@ -937,7 +937,7 @@ Create `frontend/src/components/login/views/index.ts`:
 export { LoginForm } from "./login-form";
 ```
 
-- [ ] **Step 13: Run test — see it pass (GREEN)**
+- [x] **Step 13: Run test — see it pass (GREEN)**
 
 ```bash
 cd frontend && npx vitest run tests/unit/components/login/login-form.test.tsx
@@ -947,7 +947,7 @@ Expected: **PASS**
 
 ### TDD Cycle 5: password visibility renders correctly
 
-- [ ] **Step 14: Add test for password type based on showPassword prop**
+- [x] **Step 14: Add test for password type based on showPassword prop**
 
 Add to `login-form.test.tsx`:
 
@@ -963,7 +963,7 @@ Add to `login-form.test.tsx`:
   });
 ```
 
-- [ ] **Step 15: Run tests — should pass**
+- [x] **Step 15: Run tests — should pass**
 
 ```bash
 cd frontend && npx vitest run tests/unit/components/login/login-form.test.tsx
@@ -973,7 +973,7 @@ Expected: **PASS** (all 3)
 
 ### TDD Cycle 6: error display
 
-- [ ] **Step 16: Add test for error message**
+- [x] **Step 16: Add test for error message**
 
 Add to the `describe` block:
 
@@ -991,7 +991,7 @@ Add to the `describe` block:
 
 > **Note:** `toHaveTextContent` and `toBeDisabled` come from `@testing-library/jest-dom`, which we set up in Task 1 (`tests/setup.ts`).
 
-- [ ] **Step 17: Run tests — should pass**
+- [x] **Step 17: Run tests — should pass**
 
 ```bash
 cd frontend && npx vitest run tests/unit/components/login/login-form.test.tsx
@@ -1001,7 +1001,7 @@ Expected: **PASS** (all 5)
 
 ### TDD Cycle 7: loading state
 
-- [ ] **Step 18: Add test for loading state**
+- [x] **Step 18: Add test for loading state**
 
 Add to the `describe` block:
 
@@ -1014,7 +1014,7 @@ Add to the `describe` block:
   });
 ```
 
-- [ ] **Step 19: Run tests — should pass**
+- [x] **Step 19: Run tests — should pass**
 
 ```bash
 cd frontend && npx vitest run tests/unit/components/login/login-form.test.tsx
@@ -1022,7 +1022,7 @@ cd frontend && npx vitest run tests/unit/components/login/login-form.test.tsx
 
 Expected: **PASS** (all 6)
 
-- [ ] **Step 20: Commit**
+- [x] **Step 20: Commit**
 
 ```bash
 git add frontend/src/components/login/views/ frontend/tests/unit/components/login/login-form.test.tsx
