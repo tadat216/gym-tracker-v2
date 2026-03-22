@@ -335,7 +335,7 @@ This hook composes Zustand (token) + TanStack Query (API calls). Instead of manu
 
 ### TDD Cycle 1: login flow
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Create `frontend/tests/unit/hooks/use-auth.test.tsx`:
 
@@ -393,7 +393,7 @@ describe("useAuth", () => {
 });
 ```
 
-- [ ] **Step 2: Run test — see it fail (RED)**
+- [x] **Step 2: Run test — see it fail (RED)**
 
 ```bash
 cd frontend && npx vitest run tests/unit/hooks/use-auth.test.tsx
@@ -401,7 +401,7 @@ cd frontend && npx vitest run tests/unit/hooks/use-auth.test.tsx
 
 Expected: **FAIL** — `Cannot find module '@/hooks/use-auth'`
 
-- [ ] **Step 3: Write minimal implementation (GREEN)**
+- [x] **Step 3: Write minimal implementation (GREEN)**
 
 Create `frontend/src/hooks/types.ts`:
 
@@ -472,7 +472,7 @@ export function useAuth(): UseAuthReturn {
 > - If `getMe` fails with 401 → the axios interceptor calls `clear()` → token becomes null → `useGetMe` disables itself.
 > - `isAuthenticated` requires both token AND user — this prevents a flash of "authenticated" before the user is fetched.
 
-- [ ] **Step 4: Run test — see it pass (GREEN)**
+- [x] **Step 4: Run test — see it pass (GREEN)**
 
 ```bash
 cd frontend && npx vitest run tests/unit/hooks/use-auth.test.tsx
@@ -482,7 +482,7 @@ Expected: **PASS**
 
 ### TDD Cycle 2: logout
 
-- [ ] **Step 5: Add test for logout**
+- [x] **Step 5: Add test for logout**
 
 Add to the `describe` block in `use-auth.test.tsx`:
 
@@ -502,7 +502,7 @@ Add to the `describe` block in `use-auth.test.tsx`:
   });
 ```
 
-- [ ] **Step 6: Run tests — should pass**
+- [x] **Step 6: Run tests — should pass**
 
 ```bash
 cd frontend && npx vitest run tests/unit/hooks/use-auth.test.tsx
@@ -512,7 +512,7 @@ Expected: **PASS** (both tests)
 
 ### TDD Cycle 3: isAuthenticated requires both token and user
 
-- [ ] **Step 7: Add test for isAuthenticated**
+- [x] **Step 7: Add test for isAuthenticated**
 
 Add to the `describe` block:
 
@@ -532,7 +532,7 @@ Add to the `describe` block:
   });
 ```
 
-- [ ] **Step 8: Run tests — should pass**
+- [x] **Step 8: Run tests — should pass**
 
 ```bash
 cd frontend && npx vitest run tests/unit/hooks/use-auth.test.tsx
@@ -540,7 +540,7 @@ cd frontend && npx vitest run tests/unit/hooks/use-auth.test.tsx
 
 Expected: **PASS** (all 3)
 
-- [ ] **Step 9: Commit**
+- [x] **Step 9: Commit**
 
 ```bash
 git add frontend/src/hooks/use-auth.ts frontend/tests/unit/hooks/use-auth.test.tsx
