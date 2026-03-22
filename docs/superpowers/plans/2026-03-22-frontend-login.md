@@ -854,7 +854,7 @@ import { Input } from "@/ui/input";
 import { Label } from "@/ui/label";
 import type { LoginFormProps } from "../types";
 
-export function LoginForm({
+const LoginForm = ({
   username,
   password,
   showPassword,
@@ -864,7 +864,7 @@ export function LoginForm({
   onPasswordChange,
   onTogglePassword,
   onSubmit,
-}: LoginFormProps): React.JSX.Element {
+}: LoginFormProps) => {
   return (
     <div className="flex min-h-dvh items-center justify-center px-6">
       <form onSubmit={onSubmit} className="w-full max-w-sm space-y-6">
@@ -926,15 +926,18 @@ export function LoginForm({
       </form>
     </div>
   );
-}
+};
+
+LoginForm.displayName = "LoginForm";
+export default LoginForm;
 ```
 
-> **Note:** No `useState`, no `FormEvent` handler — everything comes from props. The view is truly pure.
+> **Convention:** Views use `const View = () => {}` + `displayName` + `default export`. Barrel files re-export as named for external consumers.
 
 Create `frontend/src/components/login/views/index.ts`:
 
 ```typescript
-export { LoginForm } from "./login-form";
+export { default as LoginForm } from "./login-form";
 ```
 
 - [x] **Step 13: Run test — see it pass (GREEN)**
@@ -1112,7 +1115,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { useLoginForm } from "./hooks";
 import { LoginForm } from "./views";
 
-export function LoginContainer(): React.JSX.Element {
+const LoginContainer = () => {
   const { login, isLoggingIn, loginError } = useAuth();
   const form = useLoginForm(login);
 
@@ -1129,7 +1132,10 @@ export function LoginContainer(): React.JSX.Element {
       onSubmit={form.handleSubmit}
     />
   );
-}
+};
+
+LoginContainer.displayName = "LoginContainer";
+export default LoginContainer;
 ```
 
 > **The container owns zero state and zero navigation logic.** `useAuth` provides auth state (from TanStack Query), `useLoginForm` provides form state, and `LoginForm` renders it all. Each layer has one job. Redirects are handled by the route's `beforeLoad`.
@@ -1137,7 +1143,7 @@ export function LoginContainer(): React.JSX.Element {
 Create `frontend/src/components/login/index.ts`:
 
 ```typescript
-export { LoginContainer } from "./container";
+export { default as LoginContainer } from "./container";
 export type { LoginFormProps, UseLoginFormReturn } from "./types";
 ```
 

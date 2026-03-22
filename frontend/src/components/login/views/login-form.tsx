@@ -4,7 +4,7 @@ import { Input } from "@/ui/input";
 import { Label } from "@/ui/label";
 import type { LoginFormProps } from "../types";
 
-export function LoginForm({
+const LoginForm = ({
   username,
   password,
   showPassword,
@@ -14,7 +14,7 @@ export function LoginForm({
   onPasswordChange,
   onTogglePassword,
   onSubmit,
-}: LoginFormProps): React.JSX.Element {
+}: LoginFormProps) => {
   return (
     <div className="flex min-h-dvh items-center justify-center px-6">
       <form onSubmit={onSubmit} className="w-full max-w-sm space-y-6">
@@ -76,4 +76,7 @@ export function LoginForm({
       </form>
     </div>
   );
-}
+};
+
+LoginForm.displayName = "LoginForm";
+export default LoginForm;
