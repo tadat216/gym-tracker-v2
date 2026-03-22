@@ -9,6 +9,13 @@ vi.mock("@/lib/axios", () => ({
   api: vi.fn(),
 }));
 
+// Mock TanStack Router navigation
+const mockNavigate = vi.fn();
+vi.mock("@tanstack/react-router", async () => {
+  const actual = await vi.importActual("@tanstack/react-router");
+  return { ...actual, useNavigate: () => mockNavigate };
+});
+
 import { api } from "@/lib/axios";
 
 function createWrapper() {
