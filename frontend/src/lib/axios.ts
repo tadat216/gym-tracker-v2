@@ -28,14 +28,24 @@ axios.interceptors.response.use(
 /**
  * Orval custom mutator — translates fetch-style (url, init) to axios.
  * Orval generates: api<T>(url, { method, headers, body, signal })
+ *
+ * Returns { data, status, headers } to match Orval's generated response
+ * wrapper types (e.g. loginResponse200 = { data: TokenResponse, status: 200 }).
  */
 export const api = <T>(url: string, init?: RequestInit): Promise<T> =>
   axios
-    .request<T>({
+    .request({
       url,
       method: init?.method,
       headers: init?.headers as Record<string, string>,
       data: init?.body,
       signal: init?.signal ?? undefined,
     })
-    .then((response) => response.data as T);
+    .then(
+      (response) =>
+        ({
+          data: response.data,
+          status: response.status,
+          headers: response.headers,
+        }) as T,
+    );
