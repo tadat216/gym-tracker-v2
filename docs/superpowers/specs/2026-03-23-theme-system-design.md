@@ -4,6 +4,8 @@
 
 Cross-cutting theme system that respects the user's system color preference and provides a manual toggle to override it. Persists the user's choice in localStorage. All pages automatically adapt via CSS variables.
 
+Follows the [shadcn/ui dark mode guide for Vite](https://ui.shadcn.com/docs/dark-mode/vite.md) — uses React Context (`ThemeProvider`) instead of Zustand.
+
 ## Decisions
 
 - **Default:** Follow system preference (`prefers-color-scheme`)
@@ -11,7 +13,7 @@ Cross-cutting theme system that respects the user's system color preference and 
 - **No preference stored:** Falls back to system preference
 - **Toggle location:** On authenticated pages, sun/moon icon button in the page header (top-right). Not shown on login page (no header — uses system or stored preference).
 - **Icons:** `Sun` and `Moon` from `lucide-react`
-- **Implementation:** Zustand store with `persist` middleware (same pattern as auth-store)
+- **Implementation:** React Context + `ThemeProvider` (shadcn pattern) — NOT Zustand. Theme is UI-only state, no need for external store access.
 - **CSS:** Tailwind dark mode via `class` strategy — `.dark` on `<html>` element
 - **Scope:** Standalone system — login redesign and CRUD page consume it, not the other way around
 
@@ -52,65 +54,83 @@ Custom tokens for light:
 --glass-border: #e5e7eb
 ```
 
+Chart and sidebar variables remain unchanged from current `:root` values.
+
 ## Architecture
 
-### 1. Theme Store — `src/stores/theme-store.ts`
+### 1. ThemeProvider — `src/components/theme-provider.tsx`
+
+Follows the shadcn/ui Vite dark mode pattern:
 
 ```
-State:
-  - mode: 'system' | 'light' | 'dark'
+Theme type: 'dark' | 'light' | 'system'
 
-Actions:
-  - setMode(mode) → sets mode
-  - toggle() → cycles: if 'system' → 'dark', if 'dark' → 'light', if 'light' → 'system'
+ThemeProviderProps:
+  - children: React.ReactNode
+  - defaultTheme?: Theme (default: 'system')
+  - storageKey?: string (default: 'gym-tracker-theme')
 
-Derived (not in store — computed in hook):
-  - resolvedTheme: 'light' | 'dark' → actual theme after resolving system preference
+ThemeProviderState (context value):
+  - theme: Theme (current stored preference)
+  - setTheme: (theme: Theme) => void
+
+Behavior:
+  - On mount: reads theme from localStorage (or uses defaultTheme)
+  - useEffect syncs the resolved theme to document.documentElement:
+    - Removes both 'light' and 'dark' classes
+    - If theme === 'system': checks window.matchMedia('(prefers-color-scheme: dark)')
+    - Adds the resolved class ('light' or 'dark')
+  - setTheme: updates state + writes to localStorage
 ```
 
-Uses `persist` middleware with localStorage key `"theme-store"`.
+### 2. useTheme Hook — `src/components/theme-provider.tsx` (co-located)
 
-### 2. Theme Hook — `src/hooks/use-theme.ts`
+Exported from the same file as ThemeProvider (shadcn pattern):
 
 ```
 Returns:
-  - mode: 'system' | 'light' | 'dark' (raw stored preference)
-  - resolvedTheme: 'light' | 'dark' (actual applied theme)
-  - toggle() → cycles mode
-  - setMode(mode) → sets explicitly
+  - theme: Theme (raw stored preference: 'system' | 'light' | 'dark')
+  - setTheme: (theme: Theme) => void
+
+Throws if used outside ThemeProvider.
 ```
 
-Logic:
-- Reads `mode` from store
-- If `mode === 'system'`: listens to `window.matchMedia('(prefers-color-scheme: dark)')` to resolve
-- If `mode === 'light'` or `'dark'`: uses that directly
-- Applies `class="dark"` on `document.documentElement` when resolved theme is dark, removes it when light
-- Uses `useEffect` to sync class with resolved theme
+### 3. Provider Setup — `src/main.tsx`
 
-### 3. Theme Initialization — `src/routes/__root.tsx`
+Wrap the app with `ThemeProvider`:
 
-- Calls `useTheme()` in the root route component (not in `beforeLoad`)
-- The hook handles class application via `useEffect`
-- No flash-of-wrong-theme: add a small inline `<script>` in `index.html` that reads localStorage and sets the class before React hydrates (optional optimization — can skip for v1)
+```tsx
+<ThemeProvider defaultTheme="system" storageKey="gym-tracker-theme">
+  <QueryClientProvider client={queryClient}>
+    <RouterProvider router={router} />
+  </QueryClientProvider>
+</ThemeProvider>
+```
 
-### 4. Theme Toggle Button — `src/components/theme-toggle.tsx`
+ThemeProvider wraps everything so the theme is available in all routes including login.
 
-Simple standalone component (not part of hooks/views/container — it's a shared UI element):
+### 4. Mode Toggle — `src/components/mode-toggle.tsx`
+
+Uses shadcn `DropdownMenu` + lucide-react icons:
 
 ```
-Props: none (reads from useTheme hook directly)
-
 Renders:
-  - If resolvedTheme is 'dark': Sun icon (clicking switches to light)
-  - If resolvedTheme is 'light': Moon icon (clicking switches to dark)
-  - Uses lucide-react Sun and Moon icons
-  - Styled as a ghost icon button (same as shadcn Button variant="ghost" size="icon")
+  - Trigger: Button (variant="ghost", size="icon") with Sun/Moon icons
+    - Sun icon: visible in light mode (rotates + scales to hidden in dark)
+    - Moon icon: visible in dark mode (rotates + scales to hidden in light)
+  - Dropdown menu with 3 items:
+    - Light (onClick: setTheme("light"))
+    - Dark (onClick: setTheme("dark"))
+    - System (onClick: setTheme("system"))
+  - Uses useTheme() to get current theme and setTheme
 ```
+
+This gives users explicit control over all 3 modes (unlike a simple toggle that hides the "system" option).
 
 ### 5. Where the Toggle Lives
 
-- **Login page:** No toggle — theme follows stored preference or system default
-- **Authenticated pages:** Toggle button in the page header area. Each page includes it in its own header (e.g., `users-page.tsx` renders it in the top-right of the header bar)
+- **Login page:** No toggle visible (no header). Theme follows stored preference or system default.
+- **Authenticated pages:** Mode toggle in the page header area (e.g., `users-page.tsx` renders it in the top-right of the header bar)
 - Future: when a shared layout/navbar exists, move the toggle there
 
 ## What Changes
@@ -118,17 +138,21 @@ Renders:
 | File | Change |
 |------|--------|
 | `src/App.css` | Update `:root` light theme colors to Steel Light palette |
-| `src/stores/theme-store.ts` | New file — Zustand store for theme mode |
-| `src/hooks/use-theme.ts` | New file — hook that resolves theme + syncs DOM class |
-| `src/components/theme-toggle.tsx` | New file — sun/moon toggle button |
-| `src/routes/__root.tsx` | Call `useTheme()` for root-level theme sync, remove hardcoded dark class |
+| `src/components/theme-provider.tsx` | New file — React Context provider + useTheme hook |
+| `src/components/mode-toggle.tsx` | New file — dropdown menu with Light/Dark/System options |
+| `src/main.tsx` | Wrap app with `<ThemeProvider>` |
+| `src/routes/__root.tsx` | Remove any hardcoded dark class logic if present |
+
+## Dependencies to Install
+
+- shadcn/ui component: `dropdown-menu` (for the mode toggle menu)
 
 ## Testing Strategy
 
-1. **theme-store tests** — verify setMode, toggle cycling, persist to localStorage
-2. **use-theme tests** — mock matchMedia, verify resolvedTheme for each mode, verify DOM class sync
-3. **theme-toggle tests** — renders Sun in dark mode, Moon in light mode, calls toggle on click
+1. **theme-provider tests** — verify context provides theme/setTheme, applies correct class to documentElement, reads from localStorage, falls back to defaultTheme
+2. **mode-toggle tests** — renders trigger button, opens dropdown with 3 options, calls setTheme with correct value on click
 
 ## Dependencies
 
-None new — `lucide-react` is already installed. Zustand persist middleware already in use.
+- `lucide-react` — already installed
+- shadcn `dropdown-menu` — needs to be added via `npx shadcn@latest add dropdown-menu`
