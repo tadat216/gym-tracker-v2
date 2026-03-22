@@ -1362,13 +1362,13 @@ git commit -m "feat(frontend): add auth gate in root route"
 **Files:**
 - Delete: `frontend/src/App.tsx`
 
-- [ ] **Step 1: Remove dead App.tsx**
+- [x] **Step 1: Remove dead App.tsx**
 
 ```bash
 rm frontend/src/App.tsx
 ```
 
-- [ ] **Step 2: Run all tests**
+- [x] **Step 2: Run all tests**
 
 ```bash
 cd frontend && npx vitest run
@@ -1376,7 +1376,7 @@ cd frontend && npx vitest run
 
 Expected: **PASS** — nothing depends on App.tsx.
 
-- [ ] **Step 3: Run TypeScript check**
+- [x] **Step 3: Run TypeScript check**
 
 ```bash
 cd frontend && npx tsc -b
@@ -1384,7 +1384,7 @@ cd frontend && npx tsc -b
 
 Expected: no errors.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add -A frontend/src/App.tsx
