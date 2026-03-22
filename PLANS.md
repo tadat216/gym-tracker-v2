@@ -9,5 +9,8 @@
 | 4 | docs/superpowers/plans/2026-03-20-backend-auth.md | Backend auth implementation | ✅ Done | 3 |
 | 5 | docs/superpowers/specs/2026-03-21-frontend-login-design.md | Frontend login design spec | ✅ Done | 4 |
 | 6 | docs/superpowers/plans/2026-03-22-frontend-login.md | Frontend login TDD tutorial | ⬜ Pending | 5 |
+| 7 | docs/superpowers/specs/2026-03-23-navigation-drawer-design.md | Navigation drawer & header bar spec | ✅ Done | 5 |
+| 8 | docs/superpowers/plans/2026-03-23-navigation-drawer.md | Navigation drawer implementation | ⬜ Pending | 7 |
+| 9 | docs/superpowers/specs/2026-03-22-admin-users-crud-design.md | Admin users CRUD spec | ✅ Done | 8 |
 
 ## Status legend: ⬜ Pending | 🔄 In Progress | ✅ Done
