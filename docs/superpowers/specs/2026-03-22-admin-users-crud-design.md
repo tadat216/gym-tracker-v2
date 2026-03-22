@@ -17,6 +17,16 @@ Mobile-first admin user management page for the gym tracker app. Single-page lay
 - **Data fetching:** Orval-generated hooks (`useListUsers`, `useCreateUser`, `useUpdateUser`, `useDeleteUser`). No optimistic UI — wait for server confirmation.
 - **Component pattern:** Hooks/Types/Views/Container — same as login component
 
+## Backend Prerequisites
+
+Before building the frontend, the backend schemas need updating:
+
+1. **Add `is_admin` to `UserCreate`:** `is_admin: bool = False` — allows admin to set admin flag when creating users
+2. **Add `is_admin` to `UserUpdate`:** `is_admin: bool | None = None` — allows admin to toggle admin flag when editing users
+3. **Regenerate API client:** Run `scripts/generate-api.sh` after backend changes so Orval picks up the new fields
+
+These are small schema additions. The `update_user` handler uses `model_dump(exclude_unset=True)` + `setattr`, so it will handle `is_admin` automatically once added to the schema. The `create_user` handler manually constructs the `User` object, so it will also need `is_admin=body.is_admin` added to the constructor.
+
 ## Dependencies to Install
 
 - shadcn/ui components: `sheet`, `alert-dialog`, `switch`, `badge`, `sonner` (toast)
@@ -300,10 +310,10 @@ Tests written before implementation, following existing patterns:
 All endpoints require admin authentication (`Authorization: Bearer <token>`, user must have `is_admin=true`).
 
 - `GET /api/v1/users` → `UserRead[]` — list all users
-- `POST /api/v1/users` — body: `UserCreate { username, email, password }` → `UserRead` (201)
+- `POST /api/v1/users` — body: `UserCreate { username, email, password, is_admin? }` → `UserRead` (201)
 - `GET /api/v1/users/{user_id}` → `UserRead`
-- `PATCH /api/v1/users/{user_id}` — body: `UserUpdate { username?, email?, password? }` → `UserRead`
-- `DELETE /api/v1/users/{user_id}` → `UserRead` (200)
+- `PATCH /api/v1/users/{user_id}` — body: `UserUpdate { username?, email?, password?, is_admin? }` → `UserRead`
+- `DELETE /api/v1/users/{user_id}` → `MessageResponse { message }` (200)
 - Error 409: duplicate username or email
 - Error 400: admin cannot delete themselves
 - Error 403: not an admin
