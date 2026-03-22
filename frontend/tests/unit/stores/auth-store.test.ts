@@ -3,7 +3,6 @@ import { useAuthStore } from "@/stores/auth-store";
 
 describe("auth-store", () => {
   beforeEach(() => {
-    // Reset store between tests so they don't leak state
     useAuthStore.setState({ token: null, user: null });
   });
 
@@ -13,7 +12,12 @@ describe("auth-store", () => {
     expect(state.user).toBeNull();
   });
 
-    it("clear resets token and user to null", () => {
+  it("setToken stores the token", () => {
+    useAuthStore.getState().setToken("abc123");
+    expect(useAuthStore.getState().token).toBe("abc123");
+  });
+
+  it("clear resets token and user to null", () => {
     useAuthStore.getState().setToken("abc123");
     useAuthStore.getState().setUser({
       id: 1,

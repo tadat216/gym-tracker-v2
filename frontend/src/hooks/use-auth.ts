@@ -1,3 +1,4 @@
+import { isAxiosError } from "axios";
 import { useNavigate } from "@tanstack/react-router";
 import { useAuthStore } from "@/stores/auth-store";
 import { useLogin, useGetMe } from "@/api/auth/auth";
@@ -29,13 +30,22 @@ export function useAuth(): UseAuthReturn {
 
   const user = meResponse?.data ?? null;
 
+  const err: unknown = loginMutation.error;
+  let loginError: string | null = null;
+  if (err) {
+    loginError =
+      isAxiosError(err) && err.response?.status === 401
+        ? "Invalid username or password"
+        : "Something went wrong. Please try again.";
+  }
+
   return {
     user,
     token,
     isAuthenticated: !!token && !!user,
     isInitializing: !!token && isInitializing,
     isLoggingIn: loginMutation.isPending,
-    loginError: loginMutation.error ? "Invalid username or password" : null,
+    loginError,
     login,
     logout,
   };
