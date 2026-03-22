@@ -1048,7 +1048,7 @@ The container wires `useAuth` (auth state) + `useLoginForm` (form state) → `Lo
 
 ### TDD Cycle 1: renders LoginForm and calls login on submit
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Create `frontend/tests/unit/components/login/container.test.tsx`:
 
@@ -1098,7 +1098,7 @@ describe("Login Container", () => {
 
 > **No `useNavigate` mock needed.** Redirect logic is handled by `beforeLoad` in the route definition, not by the container component. The container only renders the form and wires hooks.
 
-- [ ] **Step 2: Run test — see it fail (RED)**
+- [x] **Step 2: Run test — see it fail (RED)**
 
 ```bash
 cd frontend && npx vitest run tests/unit/components/login/container.test.tsx
@@ -1106,7 +1106,7 @@ cd frontend && npx vitest run tests/unit/components/login/container.test.tsx
 
 Expected: **FAIL** — module not found.
 
-- [ ] **Step 3: Write the container (GREEN)**
+- [x] **Step 3: Write the container (GREEN)**
 
 Create `frontend/src/components/login/container.tsx`:
 
@@ -1147,7 +1147,7 @@ export { default as LoginContainer } from "./container";
 export type { LoginFormProps, UseLoginFormReturn } from "./types";
 ```
 
-- [ ] **Step 4: Run test — see it pass (GREEN)**
+- [x] **Step 4: Run test — see it pass (GREEN)**
 
 ```bash
 cd frontend && npx vitest run tests/unit/components/login/container.test.tsx
@@ -1157,7 +1157,7 @@ Expected: **PASS**
 
 ### TDD Cycle 2: shows error on failed login
 
-- [ ] **Step 5: Add test for error state**
+- [x] **Step 5: Add test for error state**
 
 Add to `container.test.tsx`:
 
@@ -1181,7 +1181,7 @@ Add to `container.test.tsx`:
   });
 ```
 
-- [ ] **Step 6: Run tests — should pass**
+- [x] **Step 6: Run tests — should pass**
 
 ```bash
 cd frontend && npx vitest run tests/unit/components/login/container.test.tsx
@@ -1189,7 +1189,7 @@ cd frontend && npx vitest run tests/unit/components/login/container.test.tsx
 
 Expected: **PASS** (both tests)
 
-- [ ] **Step 7: Create the route file with beforeLoad redirect**
+- [x] **Step 7: Create the route file with beforeLoad redirect**
 
 Create `frontend/src/routes/login.tsx`:
 
@@ -1211,7 +1211,7 @@ export const Route = createFileRoute("/login")({
 
 > **Why `token` instead of `isAuthenticated`?** `isAuthenticated` requires both token AND user (from `useGetMe`), but `useGetMe` is a React hook — it only runs inside components. In `beforeLoad`, we only have access to the Zustand store's synchronous state. If a token exists, the user was previously authenticated — redirect them to `/` where `useGetMe` will validate the token. If the token turns out to be invalid, the axios 401 interceptor will clear it.
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add frontend/src/components/login/ frontend/src/routes/login.tsx frontend/tests/unit/components/login/
