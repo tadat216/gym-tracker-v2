@@ -1229,7 +1229,7 @@ Gate the entire app behind authentication using TanStack Router's `beforeLoad` �
 **Files:**
 - Modify: `frontend/src/routes/__root.tsx`
 
-- [ ] **Step 1: Update __root.tsx**
+- [x] **Step 1: Update __root.tsx**
 
 Replace `frontend/src/routes/__root.tsx`:
 
@@ -1278,7 +1278,7 @@ export const Route = createRootRoute({
 > - If `useGetMe` fails with 401 → the axios interceptor clears the token → next navigation triggers `beforeLoad` → redirects to `/login`.
 > - The `/login` route has its own `beforeLoad` (Task 7) that redirects *away* if a token exists — preventing authenticated users from seeing the login form.
 
-- [ ] **Step 2: Run all unit tests**
+- [x] **Step 2: Run all unit tests**
 
 ```bash
 cd frontend && npx vitest run
@@ -1286,7 +1286,7 @@ cd frontend && npx vitest run
 
 Expected: **PASS** — all tests pass. (The existing `App.test.tsx` may need updating — see next step.)
 
-- [ ] **Step 3: Update the existing App test**
+- [x] **Step 3: Update the existing App test**
 
 Replace `frontend/tests/unit/App.test.tsx` to account for the auth gate:
 
@@ -1340,7 +1340,7 @@ describe("App routing", () => {
 });
 ```
 
-- [ ] **Step 4: Run all tests again**
+- [x] **Step 4: Run all tests again**
 
 ```bash
 cd frontend && npx vitest run
@@ -1348,7 +1348,7 @@ cd frontend && npx vitest run
 
 Expected: **PASS**
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add frontend/src/routes/__root.tsx frontend/tests/unit/App.test.tsx
