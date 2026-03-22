@@ -2,7 +2,7 @@
 
 ## Overview
 
-Visual redesign of the existing login form to match the Midnight Steel theme. No behavior changes — same props, same hooks, same container. Only the view layer (`login-form.tsx`) and global CSS (`App.css`) change.
+Visual redesign of the existing login form to match the Midnight Steel theme. No behavior changes — same props, same hooks, same container. Only the view layer (`login-form.tsx`) changes, plus a one-line dark mode activation in `__root.tsx`.
 
 ## Decisions
 
@@ -31,7 +31,7 @@ Only two files are touched:
   - Label: uppercase, 11px, weight 600, letter-spacing 0.5px, `text-muted-foreground`
   - Input: **borderless underline style** — transparent background, no side/top borders, only `border-bottom` using `border-input`, 16px font, padding 16px vertical
   - Password toggle: same eye/eye-off icon, positioned absolute right
-- Submit button: full width, solid `bg-primary text-primary-foreground`, weight 700, 16px, rounded-xl (14px), height 52px
+- Submit button: full width, solid `bg-primary text-primary-foreground`, weight 700, 16px, rounded-xl (14px), height 52px. Text stays "Sign in" / "Signing in..." (unchanged from current — keeps tests passing)
 - Error message: `text-destructive`, same position as current
 - Bottom spacer: flex ratio ~0.6 to push content slightly above center
 
