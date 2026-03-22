@@ -163,10 +163,13 @@ Create `frontend/src/stores/auth-store.ts`:
 ```typescript
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import type { UserRead } from "@/api/model";
 
-export interface AuthState {
+interface AuthState {
   token: string | null;
+  user: UserRead | null;
   setToken: (token: string | null) => void;
+  setUser: (user: UserRead | null) => void;
   clear: () => void;
 }
 
@@ -174,15 +177,17 @@ export const useAuthStore = create<AuthState>()(
   persist(
     (set) => ({
       token: null,
+      user: null,
       setToken: (token) => set({ token }),
-      clear: () => set({ token: null }),
+      setUser: (user) => set({ user }),
+      clear: () => set({ token: null, user: null }),
     }),
     { name: "auth-store" },
   ),
 );
 ```
 
-> **Why no `user` in the store?** User data is server state — it belongs in TanStack Query's cache (via `useGetMe()`). Zustand only holds the token (a client credential). This avoids duplicating server state and lets TanStack Query handle caching/refetching automatically.
+> **Why `persist`?** Without it, refreshing the page resets the token to `null` and redirects to login. The `persist` middleware stores state in `localStorage` under the `"auth-store"` key, so the token survives page refreshes. On reload, `beforeLoad` sees the persisted token and skips the login redirect, then `useGetMe` validates it.
 
 - [ ] **Step 4: Run test — see it pass (GREEN)**
 
@@ -286,18 +291,30 @@ axios.interceptors.response.use(
 /**
  * Orval custom mutator — translates fetch-style (url, init) to axios.
  * Orval generates: api<T>(url, { method, headers, body, signal })
+ *
+ * Returns { data, status, headers } to match Orval's generated response
+ * wrapper types (e.g. loginResponse200 = { data: TokenResponse, status: 200 }).
  */
 export const api = <T>(url: string, init?: RequestInit): Promise<T> =>
   axios
-    .request<T>({
+    .request({
       url,
       method: init?.method,
       headers: init?.headers as Record<string, string>,
       data: init?.body,
-      signal: init?.signal,
+      signal: init?.signal ?? undefined,
     })
-    .then((response) => response.data);
+    .then(
+      (response) =>
+        ({
+          data: response.data,
+          status: response.status,
+          headers: response.headers,
+        }) as T,
+    );
 ```
+
+> **Why `{ data, status, headers }`?** Orval generates response wrapper types like `{ data: TokenResponse, status: 200, headers: Headers }`. The mutator must return this shape — returning just `response.data` causes a runtime mismatch where `response.data.access_token` would be `undefined`.
 
 - [x] **Step 2: Verify existing tests still pass**
 
@@ -346,17 +363,19 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { ReactNode } from "react";
 import { useAuthStore } from "@/stores/auth-store";
 
-// Mock the Orval-generated API functions (raw functions used by the hooks internally)
-vi.mock("@/api/auth/auth", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@/api/auth/auth")>();
-  return {
-    ...actual,
-    login: vi.fn(),
-    getMe: vi.fn(),
-  };
+// Mock the axios custom mutator — Orval hooks call through this
+vi.mock("@/lib/axios", () => ({
+  api: vi.fn(),
+}));
+
+// Mock TanStack Router navigation
+const mockNavigate = vi.fn();
+vi.mock("@tanstack/react-router", async () => {
+  const actual = await vi.importActual("@tanstack/react-router");
+  return { ...actual, useNavigate: () => mockNavigate };
 });
 
-import { login as apiLogin, getMe as apiGetMe } from "@/api/auth/auth";
+import { api } from "@/lib/axios";
 
 function createWrapper() {
   const queryClient = new QueryClient({
@@ -374,11 +393,18 @@ describe("useAuth", () => {
   });
 
   it("login stores token", async () => {
-    vi.mocked(apiLogin).mockResolvedValueOnce({
-      data: { access_token: "jwt-token-123", token_type: "bearer" },
-      status: 200,
-      headers: new Headers(),
-    } as any);
+    // Mock login response, then getMe response (fires after token is set)
+    vi.mocked(api)
+      .mockResolvedValueOnce({
+        data: { access_token: "jwt-token-123", token_type: "bearer" },
+        status: 200,
+        headers: new Headers(),
+      })
+      .mockResolvedValueOnce({
+        data: { id: 1, username: "admin", email: "admin@test.com" },
+        status: 200,
+        headers: new Headers(),
+      });
 
     const { useAuth } = await import("@/hooks/use-auth");
     const { result } = renderHook(() => useAuth(), { wrapper: createWrapper() });
@@ -388,10 +414,15 @@ describe("useAuth", () => {
     });
 
     expect(useAuthStore.getState().token).toBe("jwt-token-123");
-    expect(result.current.isAuthenticated).toBe(true);
+
+    await waitFor(() => {
+      expect(result.current.isAuthenticated).toBe(true);
+    });
   });
 });
 ```
+
+> **Why mock `@/lib/axios` instead of `@/api/auth/auth`?** Mocking at the axios mutator level is simpler — all Orval-generated hooks call through `api()`. We also mock `useNavigate` since the hook navigates to `/` after login.
 
 - [x] **Step 2: Run test — see it fail (RED)**
 
@@ -425,12 +456,14 @@ export interface UseAuthReturn {
 Create `frontend/src/hooks/use-auth.ts`:
 
 ```typescript
+import { useNavigate } from "@tanstack/react-router";
 import { useAuthStore } from "@/stores/auth-store";
 import { useLogin, useGetMe } from "@/api/auth/auth";
 import type { UseAuthReturn } from "./types";
 
 export function useAuth(): UseAuthReturn {
   const { token, setToken, clear } = useAuthStore();
+  const navigate = useNavigate();
 
   // Fetch user when token exists — TanStack Query handles caching/refetching
   const { data: meResponse, isLoading: isInitializing } = useGetMe({
@@ -445,6 +478,7 @@ export function useAuth(): UseAuthReturn {
   async function login(username: string, password: string): Promise<void> {
     const response = await loginMutation.mutateAsync({ data: { username, password } });
     setToken(response.data.access_token);
+    await navigate({ to: "/" });
   }
 
   function logout(): void {
@@ -467,8 +501,9 @@ export function useAuth(): UseAuthReturn {
 ```
 
 > **How this works:**
-> - `useGetMe({ enabled: !!token })` — only fetches when token exists. On page load, Zustand rehydrates the token from localStorage, then `useGetMe` auto-fires to validate it and fetch user data.
+> - `useGetMe({ enabled: !!token })` — only fetches when token exists.
 > - `useLogin().mutateAsync()` — TanStack Query handles the loading/error state. No manual `try/catch` or `useState` needed in the hook.
+> - After successful login, `navigate({ to: "/" })` redirects to the home page. This is needed because `beforeLoad` only runs on route transitions, not reactively when the token changes.
 > - If `getMe` fails with 401 → the axios interceptor calls `clear()` → token becomes null → `useGetMe` disables itself.
 > - `isAuthenticated` requires both token AND user — this prevents a flash of "authenticated" before the user is fetched.
 
@@ -521,7 +556,7 @@ Add to the `describe` block:
     useAuthStore.setState({ token: "some-token" });
 
     // getMe is still loading (never resolves in this test)
-    vi.mocked(apiGetMe).mockReturnValueOnce(new Promise(() => {}));
+    vi.mocked(api).mockReturnValueOnce(new Promise(() => {}));
 
     const { useAuth } = await import("@/hooks/use-auth");
     const { result } = renderHook(() => useAuth(), { wrapper: createWrapper() });
@@ -1038,7 +1073,7 @@ git commit -m "feat(frontend): add LoginForm view component with TDD"
 
 The container wires `useAuth` (auth state) + `useLoginForm` (form state) → `LoginForm` (view). No local state — everything comes from hooks.
 
-**Redirect logic lives in routes, not components.** Instead of `useEffect` + `useNavigate` in the container, we use TanStack Router's `beforeLoad` with `useAuthStore.getState()`. Zustand stores are plain JS objects accessible outside React, so `beforeLoad` (a non-React function) can read them directly. This prevents the login form from rendering at all when already authenticated — no flash, no timing issues.
+**Redirect logic uses two mechanisms:** (1) TanStack Router's `beforeLoad` with `useAuthStore.getState()` prevents rendering protected routes without a token — Zustand stores are plain JS objects accessible outside React. (2) `useAuth`'s `login` function calls `navigate({ to: "/" })` after storing the token, since `beforeLoad` only runs on route transitions and won't reactively redirect when the token changes mid-page.
 
 **Files:**
 - Create: `frontend/tests/unit/components/login/container.test.tsx`
@@ -1096,7 +1131,7 @@ describe("Login Container", () => {
 });
 ```
 
-> **No `useNavigate` mock needed.** Redirect logic is handled by `beforeLoad` in the route definition, not by the container component. The container only renders the form and wires hooks.
+> **No `useNavigate` mock needed in the container test.** Although `useAuth` internally uses `useNavigate` for post-login redirect, the container test mocks the entire `useAuth` hook, so navigation is never invoked.
 
 - [x] **Step 2: Run test — see it fail (RED)**
 
@@ -1138,7 +1173,7 @@ LoginContainer.displayName = "LoginContainer";
 export default LoginContainer;
 ```
 
-> **The container owns zero state and zero navigation logic.** `useAuth` provides auth state (from TanStack Query), `useLoginForm` provides form state, and `LoginForm` renders it all. Each layer has one job. Redirects are handled by the route's `beforeLoad`.
+> **The container owns zero state and zero navigation logic.** `useAuth` provides auth state (from TanStack Query) and handles post-login navigation, `useLoginForm` provides form state, and `LoginForm` renders it all. Each layer has one job.
 
 Create `frontend/src/components/login/index.ts`:
 
@@ -1414,9 +1449,9 @@ Navigate to `http://localhost:5173`. You should be redirected to the login page.
 1. Verify the form renders with username, password, and sign in button
 2. Click the eye icon — password should toggle between visible/hidden
 3. Submit with wrong credentials — "Invalid username or password" should appear
-4. Submit with correct admin credentials — should redirect to home page
+4. Submit with correct admin credentials — should redirect to home page showing "Home"
 5. Refresh the page — should stay on home (token persisted in localStorage)
-6. Open DevTools → Application → localStorage — verify `auth-store` key is present (this is where zustand persist stores the token)
+6. Open DevTools → Application → localStorage — verify `auth-store` key is present
 
 - [ ] **Step 5: Final commit if any fixes were needed**
 
