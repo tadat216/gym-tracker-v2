@@ -20,7 +20,6 @@ axios.interceptors.response.use(
   (error) => {
     if (Axios.isAxiosError(error) && error.response?.status === 401) {
       useAuthStore.getState().clear();
-      localStorage.removeItem("auth-token");
     }
     return Promise.reject(error);
   },

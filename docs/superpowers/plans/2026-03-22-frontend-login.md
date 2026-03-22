@@ -22,14 +22,16 @@ frontend/
 │   ├── stores/
 │   │   └── auth-store.ts                     # CREATE — Zustand pure state
 │   ├── hooks/
+│   │   ├── types.ts                          # CREATE — UseAuthReturn and future hook types
 │   │   └── use-auth.ts                       # CREATE — orchestration hook
 │   ├── components/
 │   │   └── login/
 │   │       ├── hooks/
-│   │       │   └── index.ts                  # CREATE — re-exports useAuth
-│   │       ├── types.ts                      # CREATE — LoginFormProps
+│   │       │   ├── use-login-form.ts         # CREATE — form state + submit handler
+│   │       │   └── index.ts                  # CREATE — re-exports hooks
+│   │       ├── types.ts                      # CREATE — LoginFormProps, UseLoginFormReturn
 │   │       ├── views/
-│   │       │   ├── login-form.tsx            # CREATE — pure rendering
+│   │       │   ├── login-form.tsx            # CREATE — pure rendering (props only)
 │   │       │   └── index.ts                  # CREATE — re-exports views
 │   │       ├── container.tsx                 # CREATE — bridges hooks → views
 │   │       └── index.ts                      # CREATE — public API
@@ -45,6 +47,7 @@ frontend/
 │       │   └── use-auth.test.tsx             # CREATE
 │       ├── components/
 │       │   └── login/
+│       │       ├── use-login-form.test.ts     # CREATE
 │       │       ├── login-form.test.tsx        # CREATE
 │       │       └── container.test.tsx         # CREATE
 │       └── App.test.tsx                       # MODIFY — update for auth
@@ -113,9 +116,9 @@ git commit -m "chore(frontend): install zustand, user-event, and configure jest-
 
 ---
 
-## Task 2: Auth Store (Zustand — Pure State)
+## Task 2: Auth Store (Zustand — Token Only)
 
-This is the simplest piece — no API calls, no side effects. Just state + setters. Perfect for your first TDD cycle.
+The store holds only the token. User data is server state — TanStack Query handles it via `useGetMe()`. This keeps the store minimal: just a credential + setters.
 
 **Files:**
 - Create: `frontend/tests/unit/stores/auth-store.test.ts`
@@ -129,18 +132,16 @@ Create `frontend/tests/unit/stores/auth-store.test.ts`:
 
 ```typescript
 import { describe, it, expect, beforeEach } from "vitest";
-import { useAuthStore } from "../../../src/stores/auth-store";
+import { useAuthStore } from "@/stores/auth-store";
 
 describe("auth-store", () => {
   beforeEach(() => {
-    // Reset store between tests so they don't leak state
-    useAuthStore.setState({ token: null, user: null });
+    useAuthStore.setState({ token: null });
   });
 
-  it("starts with null token and null user", () => {
+  it("starts with null token", () => {
     const state = useAuthStore.getState();
     expect(state.token).toBeNull();
-    expect(state.user).toBeNull();
   });
 });
 ```
@@ -151,7 +152,7 @@ describe("auth-store", () => {
 cd frontend && npx vitest run tests/unit/stores/auth-store.test.ts
 ```
 
-Expected: **FAIL** — `Cannot find module '../../../src/stores/auth-store'`
+Expected: **FAIL** — `Cannot find module '@/stores/auth-store'`
 
 > **TDD lesson:** The test fails because the file doesn't exist yet. That's the "Red" step. We've described what we *want* — now we write code to make it happen.
 
@@ -161,24 +162,27 @@ Create `frontend/src/stores/auth-store.ts`:
 
 ```typescript
 import { create } from "zustand";
-import type { UserRead } from "@/api/model";
+import { persist } from "zustand/middleware";
 
-interface AuthState {
+export interface AuthState {
   token: string | null;
-  user: UserRead | null;
   setToken: (token: string | null) => void;
-  setUser: (user: UserRead | null) => void;
   clear: () => void;
 }
 
-export const useAuthStore = create<AuthState>((set) => ({
-  token: null,
-  user: null,
-  setToken: (token) => set({ token }),
-  setUser: (user) => set({ user }),
-  clear: () => set({ token: null, user: null }),
-}));
+export const useAuthStore = create<AuthState>()(
+  persist(
+    (set) => ({
+      token: null,
+      setToken: (token) => set({ token }),
+      clear: () => set({ token: null }),
+    }),
+    { name: "auth-store" },
+  ),
+);
 ```
+
+> **Why no `user` in the store?** User data is server state — it belongs in TanStack Query's cache (via `useGetMe()`). Zustand only holds the token (a client credential). This avoids duplicating server state and lets TanStack Query handle caching/refetching automatically.
 
 - [ ] **Step 4: Run test — see it pass (GREEN)**
 
@@ -188,9 +192,9 @@ cd frontend && npx vitest run tests/unit/stores/auth-store.test.ts
 
 Expected: **PASS**
 
-### TDD Cycle 2: setToken and setUser
+### TDD Cycle 2: setToken
 
-- [ ] **Step 5: Add tests for setters**
+- [ ] **Step 5: Add test for setToken**
 
 Add to the `describe` block in `auth-store.test.ts`:
 
@@ -199,29 +203,15 @@ Add to the `describe` block in `auth-store.test.ts`:
     useAuthStore.getState().setToken("abc123");
     expect(useAuthStore.getState().token).toBe("abc123");
   });
-
-  it("setUser stores the user", () => {
-    const mockUser = {
-      id: 1,
-      username: "admin",
-      email: "admin@test.com",
-      is_admin: true,
-      created_at: "2026-01-01T00:00:00Z",
-    };
-    useAuthStore.getState().setUser(mockUser);
-    expect(useAuthStore.getState().user).toEqual(mockUser);
-  });
 ```
 
-- [ ] **Step 6: Run tests — they should pass immediately**
+- [ ] **Step 6: Run tests — should pass**
 
 ```bash
 cd frontend && npx vitest run tests/unit/stores/auth-store.test.ts
 ```
 
-Expected: **PASS** (all 3 tests)
-
-> **TDD lesson:** These pass immediately because we already wrote `setToken` and `setUser` in Step 3. That's fine — we wrote them because they were obvious. The tests still have value: they document the behavior and catch future regressions.
+Expected: **PASS** (both tests)
 
 ### TDD Cycle 3: clear()
 
@@ -230,20 +220,10 @@ Expected: **PASS** (all 3 tests)
 Add to the `describe` block:
 
 ```typescript
-  it("clear resets token and user to null", () => {
+  it("clear resets token to null", () => {
     useAuthStore.getState().setToken("abc123");
-    useAuthStore.getState().setUser({
-      id: 1,
-      username: "admin",
-      email: "admin@test.com",
-      is_admin: true,
-      created_at: "2026-01-01T00:00:00Z",
-    });
-
     useAuthStore.getState().clear();
-
     expect(useAuthStore.getState().token).toBeNull();
-    expect(useAuthStore.getState().user).toBeNull();
   });
 ```
 
@@ -253,7 +233,7 @@ Add to the `describe` block:
 cd frontend && npx vitest run tests/unit/stores/auth-store.test.ts
 ```
 
-Expected: **PASS** (all 4 tests)
+Expected: **PASS** (all 3 tests)
 
 - [ ] **Step 9: Commit**
 
@@ -271,7 +251,7 @@ The current `api` function accepts `(config: AxiosRequestConfig)` but Orval gene
 **Files:**
 - Modify: `frontend/src/lib/axios.ts`
 
-- [ ] **Step 1: Rewrite the api mutator**
+- [x] **Step 1: Rewrite the api mutator**
 
 Replace the contents of `frontend/src/lib/axios.ts`:
 
@@ -298,7 +278,6 @@ axios.interceptors.response.use(
   (error) => {
     if (Axios.isAxiosError(error) && error.response?.status === 401) {
       useAuthStore.getState().clear();
-      localStorage.removeItem("auth-token");
     }
     return Promise.reject(error);
   },
@@ -320,7 +299,7 @@ export const api = <T>(url: string, init?: RequestInit): Promise<T> =>
     .then((response) => response.data);
 ```
 
-- [ ] **Step 2: Verify existing tests still pass**
+- [x] **Step 2: Verify existing tests still pass**
 
 ```bash
 cd frontend && npx vitest run
@@ -328,7 +307,7 @@ cd frontend && npx vitest run
 
 Expected: **PASS** — all existing tests still work.
 
-- [ ] **Step 3: Run TypeScript check**
+- [x] **Step 3: Run TypeScript check**
 
 ```bash
 cd frontend && npx tsc -b
@@ -336,7 +315,7 @@ cd frontend && npx tsc -b
 
 Expected: no errors. This confirms the new signature is compatible with Orval-generated code.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add frontend/src/lib/axios.ts
@@ -347,11 +326,12 @@ git commit -m "feat(frontend): fix api mutator for Orval fetch-style + add inter
 
 ## Task 4: useAuth Hook
 
-This is the most complex piece — it orchestrates the store, Orval-generated functions, and localStorage. We'll build it test by test.
+This hook composes Zustand (token) + TanStack Query (API calls). Instead of manual `useState`/`try`/`catch`, we use the Orval-generated `useLogin()` mutation and `useGetMe()` query — they provide `isPending`, `error`, caching, and refetching for free.
 
 **Files:**
-- Create: `frontend/tests/unit/hooks/use-auth.test.tsx`
+- Create: `frontend/src/hooks/types.ts`
 - Create: `frontend/src/hooks/use-auth.ts`
+- Create: `frontend/tests/unit/hooks/use-auth.test.tsx`
 
 ### TDD Cycle 1: login flow
 
@@ -364,19 +344,19 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { renderHook, act, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { ReactNode } from "react";
-import { useAuthStore } from "../../../src/stores/auth-store";
+import { useAuthStore } from "@/stores/auth-store";
 
-// Mock the Orval-generated API functions
-vi.mock("../../../src/api/auth/auth", () => ({
-  login: vi.fn(),
-  getMe: vi.fn(),
-  useLogin: vi.fn(),
-  getLoginMutationOptions: vi.fn(() => ({
-    mutationFn: vi.fn(),
-  })),
-}));
+// Mock the Orval-generated API functions (raw functions used by the hooks internally)
+vi.mock("@/api/auth/auth", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/api/auth/auth")>();
+  return {
+    ...actual,
+    login: vi.fn(),
+    getMe: vi.fn(),
+  };
+});
 
-import { login as apiLogin, getMe as apiGetMe } from "../../../src/api/auth/auth";
+import { login as apiLogin, getMe as apiGetMe } from "@/api/auth/auth";
 
 function createWrapper() {
   const queryClient = new QueryClient({
@@ -390,32 +370,17 @@ function createWrapper() {
 describe("useAuth", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    useAuthStore.setState({ token: null, user: null });
-    localStorage.clear();
+    useAuthStore.setState({ token: null });
   });
 
-  it("login stores token and fetches user", async () => {
-    const mockUser = {
-      id: 1,
-      username: "admin",
-      email: "admin@test.com",
-      is_admin: true,
-      created_at: "2026-01-01T00:00:00Z",
-    };
-
+  it("login stores token", async () => {
     vi.mocked(apiLogin).mockResolvedValueOnce({
       data: { access_token: "jwt-token-123", token_type: "bearer" },
       status: 200,
       headers: new Headers(),
     } as any);
 
-    vi.mocked(apiGetMe).mockResolvedValueOnce({
-      data: mockUser,
-      status: 200,
-      headers: new Headers(),
-    } as any);
-
-    const { useAuth } = await import("../../../src/hooks/use-auth");
+    const { useAuth } = await import("@/hooks/use-auth");
     const { result } = renderHook(() => useAuth(), { wrapper: createWrapper() });
 
     await act(async () => {
@@ -423,8 +388,6 @@ describe("useAuth", () => {
     });
 
     expect(useAuthStore.getState().token).toBe("jwt-token-123");
-    expect(useAuthStore.getState().user).toEqual(mockUser);
-    expect(localStorage.getItem("auth-token")).toBe("jwt-token-123");
     expect(result.current.isAuthenticated).toBe(true);
   });
 });
@@ -436,74 +399,78 @@ describe("useAuth", () => {
 cd frontend && npx vitest run tests/unit/hooks/use-auth.test.tsx
 ```
 
-Expected: **FAIL** — `Cannot find module '../../../src/hooks/use-auth'`
+Expected: **FAIL** — `Cannot find module '@/hooks/use-auth'`
 
 - [ ] **Step 3: Write minimal implementation (GREEN)**
+
+Create `frontend/src/hooks/types.ts`:
+
+```typescript
+import type { UserRead } from "@/api/model";
+
+export interface UseAuthReturn {
+  user: UserRead | null;
+  token: string | null;
+  isAuthenticated: boolean;
+  isInitializing: boolean;
+  isLoggingIn: boolean;
+  loginError: string | null;
+  login: (username: string, password: string) => Promise<void>;
+  logout: () => void;
+}
+```
+
+> **No `initialize()`** — `useGetMe()` auto-fetches when the token exists. No manual `isLoading` or `error` state — TanStack Query provides `isPending` and `error` for free.
 
 Create `frontend/src/hooks/use-auth.ts`:
 
 ```typescript
-import { useCallback, useState } from "react";
 import { useAuthStore } from "@/stores/auth-store";
-import {
-  login as apiLogin,
-  getMe as apiGetMe,
-} from "@/api/auth/auth";
+import { useLogin, useGetMe } from "@/api/auth/auth";
+import type { UseAuthReturn } from "./types";
 
-export function useAuth() {
-  const { token, user, setToken, setUser, clear } = useAuthStore();
-  const [isLoading, setIsLoading] = useState(false);
+export function useAuth(): UseAuthReturn {
+  const { token, setToken, clear } = useAuthStore();
 
-  const login = useCallback(async (username: string, password: string) => {
-    setIsLoading(true);
-    try {
-      const loginResponse = await apiLogin({ username, password });
-      const accessToken = loginResponse.data.access_token;
+  // Fetch user when token exists — TanStack Query handles caching/refetching
+  const { data: meResponse, isLoading: isInitializing } = useGetMe({
+    query: {
+      enabled: !!token,
+      retry: false,
+    },
+  });
 
-      localStorage.setItem("auth-token", accessToken);
-      setToken(accessToken);
+  const loginMutation = useLogin();
 
-      const meResponse = await apiGetMe();
-      setUser(meResponse.data);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [setToken, setUser]);
+  async function login(username: string, password: string): Promise<void> {
+    const response = await loginMutation.mutateAsync({ data: { username, password } });
+    setToken(response.data.access_token);
+  }
 
-  const logout = useCallback(() => {
-    localStorage.removeItem("auth-token");
+  function logout(): void {
     clear();
-  }, [clear]);
+  }
 
-  const initialize = useCallback(async () => {
-    const storedToken = localStorage.getItem("auth-token");
-    if (!storedToken) return;
-
-    setToken(storedToken);
-    setIsLoading(true);
-    try {
-      const meResponse = await apiGetMe();
-      setUser(meResponse.data);
-    } catch {
-      // Token is invalid/expired — clean up
-      localStorage.removeItem("auth-token");
-      clear();
-    } finally {
-      setIsLoading(false);
-    }
-  }, [setToken, setUser, clear]);
+  const user = meResponse?.data ?? null;
 
   return {
     user,
     token,
-    isAuthenticated: token !== null,
-    isLoading,
+    isAuthenticated: !!token && !!user,
+    isInitializing: !!token && isInitializing,
+    isLoggingIn: loginMutation.isPending,
+    loginError: loginMutation.error ? "Invalid username or password" : null,
     login,
     logout,
-    initialize,
   };
 }
 ```
+
+> **How this works:**
+> - `useGetMe({ enabled: !!token })` — only fetches when token exists. On page load, Zustand rehydrates the token from localStorage, then `useGetMe` auto-fires to validate it and fetch user data.
+> - `useLogin().mutateAsync()` — TanStack Query handles the loading/error state. No manual `try/catch` or `useState` needed in the hook.
+> - If `getMe` fails with 401 → the axios interceptor calls `clear()` → token becomes null → `useGetMe` disables itself.
+> - `isAuthenticated` requires both token AND user — this prevents a flash of "authenticated" before the user is fetched.
 
 - [ ] **Step 4: Run test — see it pass (GREEN)**
 
@@ -520,12 +487,10 @@ Expected: **PASS**
 Add to the `describe` block in `use-auth.test.tsx`:
 
 ```tsx
-  it("logout clears store and localStorage", async () => {
-    // Set up an authenticated state
-    useAuthStore.setState({ token: "existing-token", user: { id: 1, username: "admin", email: "a@b.com", is_admin: true, created_at: "" } });
-    localStorage.setItem("auth-token", "existing-token");
+  it("logout clears token", async () => {
+    useAuthStore.setState({ token: "existing-token" });
 
-    const { useAuth } = await import("../../../src/hooks/use-auth");
+    const { useAuth } = await import("@/hooks/use-auth");
     const { result } = renderHook(() => useAuth(), { wrapper: createWrapper() });
 
     act(() => {
@@ -533,8 +498,6 @@ Add to the `describe` block in `use-auth.test.tsx`:
     });
 
     expect(useAuthStore.getState().token).toBeNull();
-    expect(useAuthStore.getState().user).toBeNull();
-    expect(localStorage.getItem("auth-token")).toBeNull();
     expect(result.current.isAuthenticated).toBe(false);
   });
 ```
@@ -547,39 +510,25 @@ cd frontend && npx vitest run tests/unit/hooks/use-auth.test.tsx
 
 Expected: **PASS** (both tests)
 
-### TDD Cycle 3: initialize with valid token
+### TDD Cycle 3: isAuthenticated requires both token and user
 
-- [ ] **Step 7: Add test for initialize**
+- [ ] **Step 7: Add test for isAuthenticated**
 
 Add to the `describe` block:
 
 ```tsx
-  it("initialize restores session from localStorage", async () => {
-    const mockUser = {
-      id: 1,
-      username: "admin",
-      email: "admin@test.com",
-      is_admin: true,
-      created_at: "2026-01-01T00:00:00Z",
-    };
+  it("isAuthenticated is false when token exists but user not yet loaded", async () => {
+    useAuthStore.setState({ token: "some-token" });
 
-    localStorage.setItem("auth-token", "stored-token");
+    // getMe is still loading (never resolves in this test)
+    vi.mocked(apiGetMe).mockReturnValueOnce(new Promise(() => {}));
 
-    vi.mocked(apiGetMe).mockResolvedValueOnce({
-      data: mockUser,
-      status: 200,
-      headers: new Headers(),
-    } as any);
-
-    const { useAuth } = await import("../../../src/hooks/use-auth");
+    const { useAuth } = await import("@/hooks/use-auth");
     const { result } = renderHook(() => useAuth(), { wrapper: createWrapper() });
 
-    await act(async () => {
-      await result.current.initialize();
-    });
-
-    expect(useAuthStore.getState().token).toBe("stored-token");
-    expect(useAuthStore.getState().user).toEqual(mockUser);
+    expect(result.current.token).toBe("some-token");
+    expect(result.current.isAuthenticated).toBe(false);
+    expect(result.current.isInitializing).toBe(true);
   });
 ```
 
@@ -591,70 +540,7 @@ cd frontend && npx vitest run tests/unit/hooks/use-auth.test.tsx
 
 Expected: **PASS** (all 3)
 
-### TDD Cycle 4: initialize with expired/invalid token
-
-- [ ] **Step 9: Add test for failed initialize**
-
-Add to the `describe` block:
-
-```tsx
-  it("initialize clears state when token is invalid", async () => {
-    localStorage.setItem("auth-token", "expired-token");
-
-    vi.mocked(apiGetMe).mockRejectedValueOnce({
-      response: { status: 401 },
-    });
-
-    const { useAuth } = await import("../../../src/hooks/use-auth");
-    const { result } = renderHook(() => useAuth(), { wrapper: createWrapper() });
-
-    await act(async () => {
-      await result.current.initialize();
-    });
-
-    expect(useAuthStore.getState().token).toBeNull();
-    expect(useAuthStore.getState().user).toBeNull();
-    expect(localStorage.getItem("auth-token")).toBeNull();
-  });
-```
-
-- [ ] **Step 10: Run tests — should pass**
-
-```bash
-cd frontend && npx vitest run tests/unit/hooks/use-auth.test.tsx
-```
-
-Expected: **PASS** (all 4)
-
-### TDD Cycle 5: initialize with no stored token
-
-- [ ] **Step 11: Add test for initialize with empty localStorage**
-
-Add to the `describe` block:
-
-```tsx
-  it("initialize does nothing when no token in localStorage", async () => {
-    const { useAuth } = await import("../../../src/hooks/use-auth");
-    const { result } = renderHook(() => useAuth(), { wrapper: createWrapper() });
-
-    await act(async () => {
-      await result.current.initialize();
-    });
-
-    expect(apiGetMe).not.toHaveBeenCalled();
-    expect(useAuthStore.getState().token).toBeNull();
-  });
-```
-
-- [ ] **Step 12: Run tests — should pass**
-
-```bash
-cd frontend && npx vitest run tests/unit/hooks/use-auth.test.tsx
-```
-
-Expected: **PASS** (all 5)
-
-- [ ] **Step 13: Commit**
+- [ ] **Step 9: Commit**
 
 ```bash
 git add frontend/src/hooks/use-auth.ts frontend/tests/unit/hooks/use-auth.test.tsx
@@ -700,32 +586,244 @@ git commit -m "feat(frontend): add shadcn input and label components"
 
 ---
 
-## Task 6: LoginForm View (Pure Presentational Component)
+## Task 6: Login Form — Hook + View Split
 
-This is the dumb component — no hooks, just props. Easy to test because we don't need to mock anything.
+Split into two parts: `useLoginForm` (form state + submit logic) and `LoginForm` (pure rendering). This makes each piece independently testable — hook tests don't need DOM, view tests don't need behavior assertions.
 
 **Files:**
-- Create: `frontend/tests/unit/components/login/login-form.test.tsx`
 - Create: `frontend/src/components/login/types.ts`
+- Create: `frontend/src/components/login/hooks/use-login-form.ts`
+- Create: `frontend/src/components/login/hooks/index.ts`
 - Create: `frontend/src/components/login/views/login-form.tsx`
 - Create: `frontend/src/components/login/views/index.ts`
+- Create: `frontend/tests/unit/components/login/use-login-form.test.ts`
+- Create: `frontend/tests/unit/components/login/login-form.test.tsx`
 
-### TDD Cycle 1: renders form fields
+### Part A: useLoginForm Hook
+
+### TDD Cycle 1: handleSubmit calls onSubmit with field values
 
 - [ ] **Step 1: Write the failing test**
+
+Create `frontend/tests/unit/components/login/use-login-form.test.ts`:
+
+```typescript
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { renderHook, act } from "@testing-library/react";
+
+describe("useLoginForm", () => {
+  const mockOnSubmit = vi.fn();
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("calls onSubmit with username and password on handleSubmit", async () => {
+    const { useLoginForm } = await import("@/components/login/hooks/use-login-form");
+    const { result } = renderHook(() => useLoginForm(mockOnSubmit));
+
+    act(() => {
+      result.current.setUsername("admin");
+      result.current.setPassword("secret123");
+    });
+
+    act(() => {
+      // Simulate form submit event
+      const fakeEvent = { preventDefault: vi.fn() } as any;
+      result.current.handleSubmit(fakeEvent);
+    });
+
+    expect(mockOnSubmit).toHaveBeenCalledWith("admin", "secret123");
+  });
+});
+```
+
+- [ ] **Step 2: Run test — see it fail (RED)**
+
+```bash
+cd frontend && npx vitest run tests/unit/components/login/use-login-form.test.ts
+```
+
+Expected: **FAIL** — module not found.
+
+- [ ] **Step 3: Create types.ts and the hook (GREEN)**
+
+Create `frontend/src/components/login/types.ts`:
+
+```typescript
+import type { FormEvent } from "react";
+
+export interface LoginFormProps {
+  username: string;
+  password: string;
+  showPassword: boolean;
+  isLoading: boolean;
+  error: string | null;
+  onUsernameChange: (value: string) => void;
+  onPasswordChange: (value: string) => void;
+  onTogglePassword: () => void;
+  onSubmit: (e: FormEvent<HTMLFormElement>) => void;
+}
+
+export interface UseLoginFormReturn {
+  username: string;
+  password: string;
+  showPassword: boolean;
+  setUsername: (value: string) => void;
+  setPassword: (value: string) => void;
+  togglePassword: () => void;
+  handleSubmit: (e: FormEvent<HTMLFormElement>) => void;
+}
+```
+
+Create `frontend/src/components/login/hooks/use-login-form.ts`:
+
+```typescript
+import { useState, type FormEvent } from "react";
+import type { UseLoginFormReturn } from "../types";
+
+export function useLoginForm(
+  onSubmit: (username: string, password: string) => void,
+): UseLoginFormReturn {
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+
+  function handleSubmit(e: FormEvent<HTMLFormElement>): void {
+    e.preventDefault();
+    onSubmit(username, password);
+  }
+
+  function togglePassword(): void {
+    setShowPassword((prev) => !prev);
+  }
+
+  return {
+    username,
+    password,
+    showPassword,
+    setUsername,
+    setPassword,
+    togglePassword,
+    handleSubmit,
+  };
+}
+```
+
+Create `frontend/src/components/login/hooks/index.ts`:
+
+```typescript
+export { useLoginForm } from "./use-login-form";
+```
+
+- [ ] **Step 4: Run test — see it pass (GREEN)**
+
+```bash
+cd frontend && npx vitest run tests/unit/components/login/use-login-form.test.ts
+```
+
+Expected: **PASS**
+
+### TDD Cycle 2: password visibility toggle
+
+- [ ] **Step 5: Add test for togglePassword**
+
+Add to the `describe` block:
+
+```typescript
+  it("togglePassword flips showPassword", async () => {
+    const { useLoginForm } = await import("@/components/login/hooks/use-login-form");
+    const { result } = renderHook(() => useLoginForm(mockOnSubmit));
+
+    expect(result.current.showPassword).toBe(false);
+
+    act(() => {
+      result.current.togglePassword();
+    });
+
+    expect(result.current.showPassword).toBe(true);
+
+    act(() => {
+      result.current.togglePassword();
+    });
+
+    expect(result.current.showPassword).toBe(false);
+  });
+```
+
+- [ ] **Step 6: Run tests — should pass**
+
+```bash
+cd frontend && npx vitest run tests/unit/components/login/use-login-form.test.ts
+```
+
+Expected: **PASS** (both tests)
+
+### TDD Cycle 3: handleSubmit calls preventDefault
+
+- [ ] **Step 7: Add test for preventDefault**
+
+Add to the `describe` block:
+
+```typescript
+  it("handleSubmit calls preventDefault", async () => {
+    const { useLoginForm } = await import("@/components/login/hooks/use-login-form");
+    const { result } = renderHook(() => useLoginForm(mockOnSubmit));
+
+    const fakeEvent = { preventDefault: vi.fn() } as any;
+
+    act(() => {
+      result.current.handleSubmit(fakeEvent);
+    });
+
+    expect(fakeEvent.preventDefault).toHaveBeenCalled();
+  });
+```
+
+- [ ] **Step 8: Run tests — should pass**
+
+```bash
+cd frontend && npx vitest run tests/unit/components/login/use-login-form.test.ts
+```
+
+Expected: **PASS** (all 3)
+
+- [ ] **Step 9: Commit**
+
+```bash
+git add frontend/src/components/login/types.ts frontend/src/components/login/hooks/ frontend/tests/unit/components/login/use-login-form.test.ts
+git commit -m "feat(frontend): add useLoginForm hook with TDD"
+```
+
+---
+
+### Part B: LoginForm View (Pure Rendering)
+
+The view receives ALL data as props — no hooks, no state, no logic. Just renders what it's given.
+
+### TDD Cycle 4: renders form fields
+
+- [ ] **Step 10: Write the failing test**
 
 Create `frontend/tests/unit/components/login/login-form.test.tsx`:
 
 ```tsx
 import { describe, it, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
-import { LoginForm } from "../../../../src/components/login/views";
+import { LoginForm } from "@/components/login/views";
+import type { LoginFormProps } from "@/components/login/types";
 
 describe("LoginForm", () => {
-  const defaultProps = {
-    onSubmit: vi.fn(),
+  const defaultProps: LoginFormProps = {
+    username: "",
+    password: "",
+    showPassword: false,
     isLoading: false,
     error: null,
+    onUsernameChange: vi.fn(),
+    onPasswordChange: vi.fn(),
+    onTogglePassword: vi.fn(),
+    onSubmit: vi.fn(),
   };
 
   it("renders username and password fields with labels", () => {
@@ -737,7 +835,7 @@ describe("LoginForm", () => {
 });
 ```
 
-- [ ] **Step 2: Run test — see it fail (RED)**
+- [ ] **Step 11: Run test — see it fail (RED)**
 
 ```bash
 cd frontend && npx vitest run tests/unit/components/login/login-form.test.tsx
@@ -745,44 +843,31 @@ cd frontend && npx vitest run tests/unit/components/login/login-form.test.tsx
 
 Expected: **FAIL** — module not found.
 
-- [ ] **Step 3: Create types.ts**
-
-Create `frontend/src/components/login/types.ts`:
-
-```typescript
-export interface LoginFormProps {
-  onSubmit: (username: string, password: string) => void;
-  isLoading: boolean;
-  error: string | null;
-}
-```
-
-- [ ] **Step 4: Write minimal LoginForm (GREEN)**
+- [ ] **Step 12: Write minimal LoginForm (GREEN)**
 
 Create `frontend/src/components/login/views/login-form.tsx`:
 
 ```tsx
-import { useState, type FormEvent } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import { Button } from "@/ui/button";
 import { Input } from "@/ui/input";
 import { Label } from "@/ui/label";
 import type { LoginFormProps } from "../types";
 
-export function LoginForm({ onSubmit, isLoading, error }: LoginFormProps) {
-  const [showPassword, setShowPassword] = useState(false);
-
-  function handleSubmit(e: FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    const form = new FormData(e.currentTarget);
-    const username = form.get("username") as string;
-    const password = form.get("password") as string;
-    onSubmit(username, password);
-  }
-
+export function LoginForm({
+  username,
+  password,
+  showPassword,
+  isLoading,
+  error,
+  onUsernameChange,
+  onPasswordChange,
+  onTogglePassword,
+  onSubmit,
+}: LoginFormProps): React.JSX.Element {
   return (
     <div className="flex min-h-dvh items-center justify-center px-6">
-      <form onSubmit={handleSubmit} className="w-full max-w-sm space-y-6">
+      <form onSubmit={onSubmit} className="w-full max-w-sm space-y-6">
         <h1 className="text-2xl font-bold">Login</h1>
 
         <div className="space-y-2">
@@ -791,6 +876,8 @@ export function LoginForm({ onSubmit, isLoading, error }: LoginFormProps) {
             id="username"
             name="username"
             type="text"
+            value={username}
+            onChange={(e) => onUsernameChange(e.target.value)}
             autoComplete="username"
             required
             className="h-12 text-base"
@@ -804,6 +891,8 @@ export function LoginForm({ onSubmit, isLoading, error }: LoginFormProps) {
               id="password"
               name="password"
               type={showPassword ? "text" : "password"}
+              value={password}
+              onChange={(e) => onPasswordChange(e.target.value)}
               autoComplete="current-password"
               required
               className="h-12 pr-12 text-base"
@@ -813,7 +902,7 @@ export function LoginForm({ onSubmit, isLoading, error }: LoginFormProps) {
               variant="ghost"
               size="icon"
               className="absolute right-1 top-1/2 -translate-y-1/2 size-11"
-              onClick={() => setShowPassword(!showPassword)}
+              onClick={onTogglePassword}
               aria-label={showPassword ? "Hide password" : "Show password"}
             >
               {showPassword ? <EyeOff className="size-5" /> : <Eye className="size-5" />}
@@ -840,13 +929,15 @@ export function LoginForm({ onSubmit, isLoading, error }: LoginFormProps) {
 }
 ```
 
+> **Note:** No `useState`, no `FormEvent` handler — everything comes from props. The view is truly pure.
+
 Create `frontend/src/components/login/views/index.ts`:
 
 ```typescript
 export { LoginForm } from "./login-form";
 ```
 
-- [ ] **Step 5: Run test — see it pass (GREEN)**
+- [ ] **Step 13: Run test — see it pass (GREEN)**
 
 ```bash
 cd frontend && npx vitest run tests/unit/components/login/login-form.test.tsx
@@ -854,64 +945,25 @@ cd frontend && npx vitest run tests/unit/components/login/login-form.test.tsx
 
 Expected: **PASS**
 
-### TDD Cycle 2: password visibility toggle
+### TDD Cycle 5: password visibility renders correctly
 
-- [ ] **Step 6: Add test for password toggle**
+- [ ] **Step 14: Add test for password type based on showPassword prop**
 
 Add to `login-form.test.tsx`:
 
 ```tsx
-import userEvent from "@testing-library/user-event";
+  it("renders password as hidden when showPassword is false", () => {
+    render(<LoginForm {...defaultProps} showPassword={false} />);
+    expect(screen.getByLabelText(/password/i).getAttribute("type")).toBe("password");
+  });
 
-// Add this test inside the describe block:
-  it("toggles password visibility when eye button is clicked", async () => {
-    const user = userEvent.setup();
-    render(<LoginForm {...defaultProps} />);
-
-    const passwordInput = screen.getByLabelText(/password/i);
-    expect(passwordInput.getAttribute("type")).toBe("password");
-
-    const toggleButton = screen.getByRole("button", { name: /show password/i });
-    await user.click(toggleButton);
-
-    expect(passwordInput.getAttribute("type")).toBe("text");
-
-    const hideButton = screen.getByRole("button", { name: /hide password/i });
-    await user.click(hideButton);
-
-    expect(passwordInput.getAttribute("type")).toBe("password");
+  it("renders password as visible when showPassword is true", () => {
+    render(<LoginForm {...defaultProps} showPassword={true} />);
+    expect(screen.getByLabelText(/password/i).getAttribute("type")).toBe("text");
   });
 ```
 
-- [ ] **Step 7: Run test — should pass**
-
-```bash
-cd frontend && npx vitest run tests/unit/components/login/login-form.test.tsx
-```
-
-Expected: **PASS** (both tests)
-
-### TDD Cycle 3: form submission
-
-- [ ] **Step 8: Add test for submit**
-
-Add to the `describe` block:
-
-```tsx
-  it("calls onSubmit with username and password", async () => {
-    const user = userEvent.setup();
-    const onSubmit = vi.fn();
-    render(<LoginForm {...defaultProps} onSubmit={onSubmit} />);
-
-    await user.type(screen.getByLabelText(/username/i), "admin");
-    await user.type(screen.getByLabelText(/password/i), "secret123");
-    await user.click(screen.getByRole("button", { name: /sign in/i }));
-
-    expect(onSubmit).toHaveBeenCalledWith("admin", "secret123");
-  });
-```
-
-- [ ] **Step 9: Run test — should pass**
+- [ ] **Step 15: Run tests — should pass**
 
 ```bash
 cd frontend && npx vitest run tests/unit/components/login/login-form.test.tsx
@@ -919,9 +971,9 @@ cd frontend && npx vitest run tests/unit/components/login/login-form.test.tsx
 
 Expected: **PASS** (all 3)
 
-### TDD Cycle 4: error display
+### TDD Cycle 6: error display
 
-- [ ] **Step 10: Add test for error message**
+- [ ] **Step 16: Add test for error message**
 
 Add to the `describe` block:
 
@@ -939,7 +991,7 @@ Add to the `describe` block:
 
 > **Note:** `toHaveTextContent` and `toBeDisabled` come from `@testing-library/jest-dom`, which we set up in Task 1 (`tests/setup.ts`).
 
-- [ ] **Step 11: Run tests — should pass**
+- [ ] **Step 17: Run tests — should pass**
 
 ```bash
 cd frontend && npx vitest run tests/unit/components/login/login-form.test.tsx
@@ -947,9 +999,9 @@ cd frontend && npx vitest run tests/unit/components/login/login-form.test.tsx
 
 Expected: **PASS** (all 5)
 
-### TDD Cycle 5: loading state
+### TDD Cycle 7: loading state
 
-- [ ] **Step 12: Add test for loading state**
+- [ ] **Step 18: Add test for loading state**
 
 Add to the `describe` block:
 
@@ -962,7 +1014,7 @@ Add to the `describe` block:
   });
 ```
 
-- [ ] **Step 13: Run tests — should pass**
+- [ ] **Step 19: Run tests — should pass**
 
 ```bash
 cd frontend && npx vitest run tests/unit/components/login/login-form.test.tsx
@@ -970,10 +1022,10 @@ cd frontend && npx vitest run tests/unit/components/login/login-form.test.tsx
 
 Expected: **PASS** (all 6)
 
-- [ ] **Step 14: Commit**
+- [ ] **Step 20: Commit**
 
 ```bash
-git add frontend/src/components/login/ frontend/tests/unit/components/ frontend/tests/setup.ts frontend/vite.config.ts
+git add frontend/src/components/login/views/ frontend/tests/unit/components/login/login-form.test.tsx
 git commit -m "feat(frontend): add LoginForm view component with TDD"
 ```
 
@@ -981,16 +1033,15 @@ git commit -m "feat(frontend): add LoginForm view component with TDD"
 
 ## Task 7: Login Container + Component Wiring
 
-The container calls the `useAuth` hook and passes props to the view. The route file is a thin wrapper.
+The container wires `useAuth` (auth state) + `useLoginForm` (form state) → `LoginForm` (view). No local state — everything comes from hooks.
 
 **Files:**
 - Create: `frontend/tests/unit/components/login/container.test.tsx`
 - Create: `frontend/src/components/login/container.tsx`
-- Create: `frontend/src/components/login/hooks/index.ts`
 - Create: `frontend/src/components/login/index.ts`
 - Create: `frontend/src/routes/login.tsx`
 
-### TDD Cycle 1: renders LoginForm and handles login
+### TDD Cycle 1: renders LoginForm and calls login on submit
 
 - [ ] **Step 1: Write the failing test**
 
@@ -1001,19 +1052,22 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
+import type { UseAuthReturn } from "@/hooks/types";
+
 // Mock useAuth hook
 const mockLogin = vi.fn();
-const mockUseAuth = vi.fn(() => ({
+const mockUseAuth = vi.fn((): UseAuthReturn => ({
   user: null,
   token: null,
   isAuthenticated: false,
-  isLoading: false,
+  isInitializing: false,
+  isLoggingIn: false,
+  loginError: null,
   login: mockLogin,
   logout: vi.fn(),
-  initialize: vi.fn(),
 }));
 
-vi.mock("../../../../src/hooks/use-auth", () => ({
+vi.mock("@/hooks/use-auth", () => ({
   useAuth: (...args: any[]) => mockUseAuth(...args),
 }));
 
@@ -1031,7 +1085,7 @@ describe("Login Container", () => {
   it("renders login form and calls login on submit", async () => {
     const user = userEvent.setup();
 
-    const { LoginContainer } = await import("../../../../src/components/login/container");
+    const { LoginContainer } = await import("@/components/login/container");
     render(<LoginContainer />);
 
     await user.type(screen.getByLabelText(/username/i), "admin");
@@ -1056,60 +1110,49 @@ Expected: **FAIL** — module not found.
 Create `frontend/src/components/login/container.tsx`:
 
 ```tsx
-import { useState, useCallback, useEffect } from "react";
+import { useEffect } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useAuth } from "@/hooks/use-auth";
+import { useLoginForm } from "./hooks";
 import { LoginForm } from "./views";
 
-export function LoginContainer() {
-  const { login, isLoading: authLoading, isAuthenticated } = useAuth();
-  const [error, setError] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+export function LoginContainer(): React.JSX.Element | null {
+  const { login, isLoggingIn, loginError, isAuthenticated } = useAuth();
+  const form = useLoginForm(login);
   const navigate = useNavigate();
 
-  // Redirect if already authenticated (useEffect to respect rules of hooks)
+  // Redirect if already authenticated
   useEffect(() => {
     if (isAuthenticated) {
       navigate({ to: "/" });
     }
   }, [isAuthenticated, navigate]);
 
-  const handleSubmit = useCallback(async (username: string, password: string) => {
-    setError(null);
-    setIsSubmitting(true);
-    try {
-      await login(username, password);
-      navigate({ to: "/" });
-    } catch {
-      setError("Invalid username or password");
-    } finally {
-      setIsSubmitting(false);
-    }
-  }, [login, navigate]);
-
   if (isAuthenticated) return null;
 
   return (
     <LoginForm
-      onSubmit={handleSubmit}
-      isLoading={isSubmitting || authLoading}
-      error={error}
+      username={form.username}
+      password={form.password}
+      showPassword={form.showPassword}
+      isLoading={isLoggingIn}
+      error={loginError}
+      onUsernameChange={form.setUsername}
+      onPasswordChange={form.setPassword}
+      onTogglePassword={form.togglePassword}
+      onSubmit={form.handleSubmit}
     />
   );
 }
 ```
 
-Create `frontend/src/components/login/hooks/index.ts`:
-
-```typescript
-export { useAuth } from "@/hooks/use-auth";
-```
+> **The container owns zero state.** `useAuth` provides auth state (from TanStack Query), `useLoginForm` provides form state, and `LoginForm` renders it all. Each layer has one job.
 
 Create `frontend/src/components/login/index.ts`:
 
 ```typescript
 export { LoginContainer } from "./container";
-export type { LoginFormProps } from "./types";
+export type { LoginFormProps, UseLoginFormReturn } from "./types";
 ```
 
 - [ ] **Step 4: Run test — see it pass (GREEN)**
@@ -1128,17 +1171,21 @@ Add to `container.test.tsx`:
 
 ```tsx
   it("shows error message when login fails", async () => {
-    const user = userEvent.setup();
-    mockLogin.mockRejectedValueOnce(new Error("401"));
+    mockUseAuth.mockReturnValueOnce({
+      user: null,
+      token: null,
+      isAuthenticated: false,
+      isInitializing: false,
+      isLoggingIn: false,
+      loginError: "Invalid username or password",
+      login: mockLogin,
+      logout: vi.fn(),
+    } satisfies UseAuthReturn);
 
-    const { LoginContainer } = await import("../../../../src/components/login/container");
+    const { LoginContainer } = await import("@/components/login/container");
     render(<LoginContainer />);
 
-    await user.type(screen.getByLabelText(/username/i), "admin");
-    await user.type(screen.getByLabelText(/password/i), "wrong");
-    await user.click(screen.getByRole("button", { name: /sign in/i }));
-
-    expect(await screen.findByRole("alert")).toHaveTextContent("Invalid username or password");
+    expect(screen.getByRole("alert")).toHaveTextContent("Invalid username or password");
   });
 ```
 
@@ -1162,13 +1209,14 @@ Add to `container.test.tsx`:
       user: { id: 1, username: "admin", email: "a@b.com", is_admin: true, created_at: "" },
       token: "some-token",
       isAuthenticated: true,
-      isLoading: false,
+      isInitializing: false,
+      isLoggingIn: false,
+      loginError: null,
       login: mockLogin,
       logout: vi.fn(),
-      initialize: vi.fn(),
-    });
+    } satisfies UseAuthReturn);
 
-    const { LoginContainer } = await import("../../../../src/components/login/container");
+    const { LoginContainer } = await import("@/components/login/container");
     render(<LoginContainer />);
 
     expect(mockNavigate).toHaveBeenCalledWith({ to: "/" });
@@ -1219,18 +1267,13 @@ Replace `frontend/src/routes/__root.tsx`:
 ```tsx
 import { createRootRoute, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
 
-function RootComponent() {
-  const { isAuthenticated, initialize } = useAuth();
-  const [isInitializing, setIsInitializing] = useState(true);
+function RootComponent(): React.JSX.Element {
+  const { isAuthenticated, isInitializing } = useAuth();
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-
-  useEffect(() => {
-    initialize().finally(() => setIsInitializing(false));
-  }, [initialize]);
 
   // Redirect to /login if not authenticated (but don't redirect if already on /login — avoids infinite loop)
   useEffect(() => {
@@ -1260,6 +1303,8 @@ export const Route = createRootRoute({
 });
 ```
 
+> **No `initialize()` call** — `useGetMe({ enabled: !!token })` inside `useAuth` auto-fires when the token is rehydrated from localStorage. `isInitializing` is true while the request is in flight.
+
 - [ ] **Step 2: Run all unit tests**
 
 ```bash
@@ -1281,15 +1326,21 @@ import {
   RouterProvider,
 } from "@tanstack/react-router";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { routeTree } from "../../src/routeTree.gen";
-import { useAuthStore } from "../../src/stores/auth-store";
+import { routeTree } from "@/routeTree.gen";
+import { useAuthStore } from "@/stores/auth-store";
 
-// Mock getMe to avoid real API calls during init
-vi.mock("../../src/api/auth/auth", () => ({
-  login: vi.fn(),
-  getMe: vi.fn().mockRejectedValue(new Error("no token")),
-  useLogin: vi.fn(),
-  getLoginMutationOptions: vi.fn(() => ({ mutationFn: vi.fn() })),
+// Mock useAuth to avoid real API calls
+vi.mock("@/hooks/use-auth", () => ({
+  useAuth: () => ({
+    user: null,
+    token: null,
+    isAuthenticated: false,
+    isInitializing: false,
+    isLoggingIn: false,
+    loginError: null,
+    login: vi.fn(),
+    logout: vi.fn(),
+  }),
 }));
 
 function renderWithRouter(initialUrl = "/") {
@@ -1392,7 +1443,7 @@ Navigate to `http://localhost:5173`. You should be redirected to the login page.
 3. Submit with wrong credentials — "Invalid username or password" should appear
 4. Submit with correct admin credentials — should redirect to home page
 5. Refresh the page — should stay on home (token persisted in localStorage)
-6. Open DevTools → Application → localStorage — verify `auth-token` is stored
+6. Open DevTools → Application → localStorage — verify `auth-store` key is present (this is where zustand persist stores the token)
 
 - [ ] **Step 5: Final commit if any fixes were needed**
 

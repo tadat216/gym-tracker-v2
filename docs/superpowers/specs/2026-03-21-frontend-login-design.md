@@ -9,7 +9,7 @@ Mobile-first login page for the gym tracker app using shadcn/ui components, Zust
 - **Auth state:** Zustand as pure client state (token + user), no API calls in the store
 - **API calls:** Orval-generated hooks (`useLogin()`, `useGetMe()`) handle server communication
 - **Orchestration:** A `useAuth()` custom hook composes the store + generated hooks
-- **Token storage:** localStorage — token expiry is enforced server-side (JWT `exp` claim causes 401), no client-side TTL needed. The 401 response interceptor handles expired tokens.
+- **Token storage:** Zustand `persist` middleware auto-syncs token to localStorage. Token expiry is enforced server-side (JWT `exp` claim causes 401). No manual localStorage calls needed anywhere.
 - **Route protection:** Entire app requires login; unauthenticated users always see login page
 - **Registration:** None — users are created by admin only
 - **Target:** Mobile-first (mobile is the only priority)
@@ -40,46 +40,47 @@ api<T>(url: string, init?: RequestInit): Promise<T>
 
 Token injection and 401 handling are added as Axios interceptors on the shared instance:
 - **Request interceptor:** reads token from Zustand store (`useAuthStore.getState().token`), attaches `Authorization: Bearer <token>` header
-- **Response interceptor:** on 401 response, clears token and user from both store and localStorage. **Exception:** does NOT trigger logout for requests during `initialize()` — that flow handles 401 gracefully on its own (see Section 2).
+- **Response interceptor:** on 401 response, calls `clear()` on the store (persist auto-syncs removal to localStorage). **Exception:** does NOT trigger logout for requests during `initialize()` — that flow handles 401 gracefully on its own (see Section 2).
 
 **Also:** Remove `App.tsx` — it's dead code since TanStack Router doesn't use it.
 
-### 1. Auth State — Zustand Store
+### 1. Auth State — Zustand Store (Token Only)
 
 **File:** `src/stores/auth-store.ts`
 
 ```
 State:
   - token: string | null
-  - user: UserRead | null
 
 Actions (pure state setters):
   - setToken(token: string | null)
-  - setUser(user: UserRead | null)
-  - clear()  → resets token and user to null
+  - clear()  → resets token to null
 ```
 
-No API calls in the store. Just state + setters.
+Uses `persist` middleware to auto-sync token to localStorage. No `user` in the store — user data is server state managed by TanStack Query.
 
 ### 2. Auth Orchestration — useAuth Hook
 
 **File:** `src/hooks/use-auth.ts`
 
-Composes Zustand store + Orval-generated functions:
+Composes Zustand store (token) + Orval-generated TanStack Query hooks (API calls):
 
 ```
 Returns:
-  - user: UserRead | null (from store)
-  - isAuthenticated: boolean (derived: token !== null)
-  - isLoading: boolean (true during initialize or login)
-  - login(username, password) → calls raw login() function → stores token in localStorage + store → fetches user via raw getMe() function → sets user in store
-  - logout() → clears localStorage + store
-  - initialize() → reads token from localStorage → sets token in store → validates via raw getMe() function → sets user on success, or catches 401 and calls clear() directly (does NOT rely on the interceptor for this)
+  - user: UserRead | null (from useGetMe query cache)
+  - token: string | null (from Zustand store)
+  - isAuthenticated: boolean (true when both token and user exist)
+  - isInitializing: boolean (true while validating persisted token on page load)
+  - isLoggingIn: boolean (from useLogin mutation isPending)
+  - loginError: string | null (from useLogin mutation error)
+  - login(username, password) → calls useLogin().mutateAsync() → sets token in store
+  - logout() → calls clear() on store (persist auto-syncs removal to localStorage)
 ```
 
-**Why raw functions instead of hooks:**
-- Both `login()` and `initialize()` call the raw Orval-generated functions directly (not `useLogin`/`useGetMe` hooks). Since auth state lives in Zustand (not TanStack Query cache), the hook wrappers provide no benefit — they would add complexity without value.
-- `initialize()` catches 401 errors from `getMe()` and calls `clear()` directly, avoiding the 401 interceptor loop
+**Why TanStack Query hooks instead of raw functions:**
+- `useLogin()` provides `isPending` and `error` for free — no manual `useState`/`try`/`catch`
+- `useGetMe({ enabled: !!token })` auto-fetches user when token exists, auto-disables when token is null — replaces manual `initialize()`
+- If `getMe` fails with 401 → axios interceptor calls `clear()` → token becomes null → `useGetMe` disables itself
 
 ### 3. Route Protection
 
