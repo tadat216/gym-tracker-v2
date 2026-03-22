@@ -2,7 +2,7 @@
 
 ## Overview
 
-Visual redesign of the existing login form to match the Midnight Steel theme. No behavior changes — same props, same hooks, same container. Only the view layer (`login-form.tsx`) changes, plus a one-line dark mode activation in `__root.tsx`.
+Visual redesign of the existing login form to match the Midnight Steel theme. No behavior changes — same props, same hooks, same container. Only the view layer (`login-form.tsx`) changes. Dark mode is handled by the theme system (separate spec).
 
 ## Decisions
 
@@ -37,9 +37,9 @@ Only two files are touched:
 
 **Tailwind classes only** — no inline styles, no custom CSS. All colors via theme variables (`bg-background`, `text-primary`, `border-input`, etc.).
 
-### 2. `src/routes/__root.tsx` — Add dark class
+### 2. Dark mode activation
 
-Add `class="dark"` to the root `<html>` element so the Midnight Steel theme activates. This is a one-line change — either in the root route's `<html>` tag or via a `useEffect` that sets `document.documentElement.classList.add('dark')`.
+Handled by the theme system (see `2026-03-23-theme-system-design.md`). The theme system must be implemented first — it manages the `.dark` class on `<html>` based on system preference or user toggle. No dark mode logic in this spec.
 
 ## What Does NOT Change
 
@@ -86,6 +86,11 @@ Existing login form tests should still pass since:
 
 If any tests rely on specific CSS classes or DOM structure, they may need minor updates to match new markup. But since views are tested via accessible queries (`getByLabelText`, `getByRole`), most tests should be unaffected.
 
+## Prerequisites
+
+- **Theme system** (`2026-03-23-theme-system-design.md`) must be implemented first — provides dark/light mode switching and updated CSS variables.
+- Manrope font already installed and configured in `App.css`.
+
 ## Dependencies
 
-None new — Manrope font and theme variables are already installed and configured in `App.css`.
+None new beyond the theme system prerequisite.

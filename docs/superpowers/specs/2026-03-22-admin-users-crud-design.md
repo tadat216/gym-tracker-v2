@@ -197,7 +197,7 @@ Wires hooks to the page view:
 
 #### users-page.tsx — Page composition
 
-- Page header: "Users" title (Manrope 800) + "{count} members" subtitle
+- Page header: "Users" title (Manrope 800) + "{count} members" subtitle + `<ThemeToggle />` in top-right (from `src/components/theme-toggle.tsx`, provided by theme system)
 - Conditional content:
   - `isLoading` → `<UserListSkeleton />`
   - `users.length === 0` → `<UserListEmpty />`
@@ -317,3 +317,8 @@ All endpoints require admin authentication (`Authorization: Bearer <token>`, use
 - Error 409: duplicate username or email
 - Error 400: admin cannot delete themselves
 - Error 403: not an admin
+
+## Prerequisites
+
+- **Theme system** (`2026-03-23-theme-system-design.md`) must be implemented first — provides `<ThemeToggle />` component and dark/light mode switching
+- **Login redesign** (`2026-03-22-login-redesign-design.md`) — should be done before this so the full app has consistent styling
