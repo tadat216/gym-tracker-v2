@@ -557,19 +557,19 @@ Before building the login form, we need the UI components.
 - Create: `frontend/src/ui/input.tsx` (via shadcn CLI)
 - Create: `frontend/src/ui/label.tsx` (via shadcn CLI)
 
-- [ ] **Step 1: Add input component**
+- [x] **Step 1: Add input component**
 
 ```bash
 cd frontend && npx shadcn@latest add input
 ```
 
-- [ ] **Step 2: Add label component**
+- [x] **Step 2: Add label component**
 
 ```bash
 cd frontend && npx shadcn@latest add label
 ```
 
-- [ ] **Step 3: Verify components were created**
+- [x] **Step 3: Verify components were created**
 
 ```bash
 ls frontend/src/ui/input.tsx frontend/src/ui/label.tsx
@@ -577,7 +577,7 @@ ls frontend/src/ui/input.tsx frontend/src/ui/label.tsx
 
 Expected: both files exist.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add frontend/src/ui/input.tsx frontend/src/ui/label.tsx
