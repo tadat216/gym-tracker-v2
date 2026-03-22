@@ -1,7 +1,5 @@
 import { Eye, EyeOff } from "lucide-react";
 import { Button } from "@/ui/button";
-import { Input } from "@/ui/input";
-import { Label } from "@/ui/label";
 import type { LoginFormProps } from "../types";
 
 const LoginForm = ({
@@ -16,13 +14,35 @@ const LoginForm = ({
   onSubmit,
 }: LoginFormProps) => {
   return (
-    <div className="flex min-h-dvh items-center justify-center px-6">
-      <form onSubmit={onSubmit} className="w-full max-w-sm space-y-6">
-        <h1 className="text-2xl font-bold">Login</h1>
+    <div className="flex min-h-dvh flex-col bg-background px-7">
+      {/* Top accent line */}
+      <div className="absolute inset-x-0 top-0 h-0.75 bg-linear-to-r from-transparent via-primary to-transparent opacity-50" />
 
-        <div className="space-y-2">
-          <Label htmlFor="username">Username</Label>
-          <Input
+      {/* Top spacer */}
+      <div className="flex-1" />
+
+      {/* Brand + heading */}
+      <div className="mb-10 pt-5">
+        <p className="mb-2 text-[13px] font-extrabold uppercase tracking-[4px] text-primary">
+          Gym Tracker
+        </p>
+        <h1 className="text-[32px] font-extrabold leading-tight tracking-tight text-foreground">
+          Log in
+          <br />
+          <span className="text-muted-foreground">to continue</span>
+        </h1>
+      </div>
+
+      {/* Form */}
+      <form onSubmit={onSubmit} className="mb-10">
+        <div className="mb-4.5">
+          <label
+            htmlFor="username"
+            className="mb-1 block text-[11px] font-semibold uppercase tracking-[0.5px] text-muted-foreground"
+          >
+            Username
+          </label>
+          <input
             id="username"
             name="username"
             type="text"
@@ -30,14 +50,20 @@ const LoginForm = ({
             onChange={(e) => onUsernameChange(e.target.value)}
             autoComplete="username"
             required
-            className="h-12 text-base"
+            placeholder="Enter username"
+            className="w-full border-b border-input bg-transparent py-4 text-base font-medium text-foreground outline-none placeholder:text-muted-foreground/40 focus:border-primary"
           />
         </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="password">Password</Label>
+        <div className="mb-6">
+          <label
+            htmlFor="password"
+            className="mb-1 block text-[11px] font-semibold uppercase tracking-[0.5px] text-muted-foreground"
+          >
+            Password
+          </label>
           <div className="relative">
-            <Input
+            <input
               id="password"
               name="password"
               type={showPassword ? "text" : "password"}
@@ -45,35 +71,43 @@ const LoginForm = ({
               onChange={(e) => onPasswordChange(e.target.value)}
               autoComplete="current-password"
               required
-              className="h-12 pr-12 text-base"
+              placeholder="Enter password"
+              className="w-full border-b border-input bg-transparent py-4 pr-12 text-base font-medium text-foreground outline-none placeholder:text-muted-foreground/40 focus:border-primary"
             />
             <Button
               type="button"
               variant="ghost"
               size="icon"
-              className="absolute right-1 top-1/2 -translate-y-1/2 size-11"
+              className="absolute right-0 top-1/2 -translate-y-1/2"
               onClick={onTogglePassword}
               aria-label={showPassword ? "Hide password" : "Show password"}
             >
-              {showPassword ? <EyeOff className="size-5" /> : <Eye className="size-5" />}
+              {showPassword ? (
+                <EyeOff className="size-5 text-muted-foreground" />
+              ) : (
+                <Eye className="size-5 text-muted-foreground" />
+              )}
             </Button>
           </div>
         </div>
 
         {error && (
-          <p className="text-sm text-destructive" role="alert">
+          <p className="mb-4 text-sm text-destructive" role="alert">
             {error}
           </p>
         )}
 
         <Button
           type="submit"
-          className="h-12 w-full text-base"
+          className="h-13 w-full rounded-xl text-base font-bold"
           disabled={isLoading}
         >
           {isLoading ? "Signing in..." : "Sign in"}
         </Button>
       </form>
+
+      {/* Bottom spacer */}
+      <div className="flex-[0.6]" />
     </div>
   );
 };
