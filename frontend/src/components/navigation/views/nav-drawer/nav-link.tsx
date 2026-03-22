@@ -9,7 +9,7 @@ const NavLink = ({ icon: Icon, label, href, isActive, onClick }: NavLinkProps) =
       className={cn(
         "flex w-full items-center gap-3 rounded-lg px-3 py-3 text-sm font-medium transition-colors",
         isActive
-          ? "bg-accent text-accent-foreground"
+          ? "bg-accent/10 text-accent-foreground"
           : "text-muted-foreground hover:bg-muted hover:text-foreground"
       )}
       onClick={() => onClick(href)}

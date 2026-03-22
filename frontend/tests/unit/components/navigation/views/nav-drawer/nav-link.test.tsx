@@ -30,12 +30,12 @@ describe("NavLink", () => {
   it("applies active styles when isActive is true", () => {
     render(<NavLink {...defaultProps} isActive={true} />);
     const button = screen.getByRole("button", { name: /home/i });
-    expect(button.className).toContain("bg-accent");
+    expect(button.className).toContain("bg-accent/10");
   });
 
   it("does not apply active styles when isActive is false", () => {
     render(<NavLink {...defaultProps} isActive={false} />);
     const button = screen.getByRole("button", { name: /home/i });
-    expect(button.className).not.toContain("bg-accent");
+    expect(button.className).not.toContain("bg-accent/10");
   });
 });

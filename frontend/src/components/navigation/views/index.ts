@@ -1,2 +1,2 @@
 export { default as AppHeader } from "./app-header";
-export { NavDrawer } from "./nav-drawer";
+export { default as NavDrawer } from "./nav-drawer/nav-drawer";

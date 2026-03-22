@@ -28,7 +28,7 @@ describe("NavDrawerLinks", () => {
   it("marks Home as active when currentPath is /", () => {
     render(<NavDrawerLinks {...defaultProps} currentPath="/" />);
     const homeButton = screen.getByRole("button", { name: /home/i });
-    expect(homeButton.className).toContain("bg-accent");
+    expect(homeButton.className).toContain("bg-accent/10");
   });
 
   it("marks Users as active when currentPath is /admin/users", () => {
