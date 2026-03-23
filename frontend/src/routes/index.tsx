@@ -6,8 +6,10 @@ export const Route = createFileRoute("/")({
 
 function HomePage() {
   return (
-    <div className="flex min-h-screen items-center justify-center">
-      <p className="text-lg font-medium">Home</p>
+    <div className="flex items-center justify-center p-8">
+      <p className="text-lg font-medium text-muted-foreground">
+        Workout tracking coming soon
+      </p>
     </div>
   );
 }
