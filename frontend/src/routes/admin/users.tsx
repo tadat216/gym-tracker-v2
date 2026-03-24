@@ -1,5 +1,6 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useAuthStore } from "@/stores/auth-store";
+import { UsersContainer } from "@/components/users";
 
 export const Route = createFileRoute("/admin/users")({
   beforeLoad: () => {
@@ -15,11 +16,5 @@ export const Route = createFileRoute("/admin/users")({
 });
 
 function AdminUsersPage() {
-  return (
-    <div className="flex items-center justify-center p-8">
-      <p className="text-lg font-medium text-muted-foreground">
-        Users management coming soon
-      </p>
-    </div>
-  );
+  return <UsersContainer />;
 }

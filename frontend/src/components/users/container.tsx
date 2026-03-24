@@ -42,8 +42,10 @@ const UsersContainer = () => {
         await data.updateUser(form.editingUser.id, update);
       }
       form.close();
-    } catch (err: any) {
-      const status = err?.response?.status ?? err?.status;
+    } catch (err: unknown) {
+      const status =
+        (err as { response?: { status?: number } })?.response?.status ??
+        (err as { status?: number })?.status;
       if (status === 409) {
         setSubmitError("Username or email already taken");
       } else {
