@@ -9,12 +9,21 @@ export function useAuth(): UseAuthReturn {
   const navigate = useNavigate();
 
   // Fetch user when token exists — TanStack Query handles caching/refetching
+  // onSuccess syncs user into store so route guards (beforeLoad) can access via getState()
   const { data: meResponse, isLoading: isInitializing } = useGetMe({
     query: {
       enabled: !!token,
       retry: false,
     },
   });
+
+  const user = meResponse?.data ?? null;
+
+  // Sync user to Zustand store for route guards (beforeLoad reads getState())
+  // Uses store.getState() to avoid subscribing and causing re-renders
+  if (user && useAuthStore.getState().user?.id !== user.id) {
+    useAuthStore.getState().setUser(user);
+  }
 
   const loginMutation = useLogin();
 
@@ -27,8 +36,6 @@ export function useAuth(): UseAuthReturn {
   function logout(): void {
     clear();
   }
-
-  const user = meResponse?.data ?? null;
 
   const err: unknown = loginMutation.error;
   let loginError: string | null = null;

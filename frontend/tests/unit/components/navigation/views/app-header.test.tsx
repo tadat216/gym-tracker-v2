@@ -3,11 +3,6 @@ import { render, screen } from "@testing-library/react";
 import { userEvent } from "@testing-library/user-event";
 import AppHeader from "@/components/navigation/views/app-header";
 
-// Mock ModeToggle since it's an external component with its own tests
-vi.mock("@/components/mode-toggle", () => ({
-  ModeToggle: () => <div data-testid="mode-toggle" />,
-}));
-
 describe("AppHeader", () => {
   const defaultProps = {
     title: "Home",
@@ -31,10 +26,5 @@ describe("AppHeader", () => {
 
     await user.click(screen.getByRole("button", { name: /open menu/i }));
     expect(onMenuClick).toHaveBeenCalledOnce();
-  });
-
-  it("renders the mode toggle", () => {
-    render(<AppHeader {...defaultProps} />);
-    expect(screen.getByTestId("mode-toggle")).toBeDefined();
   });
 });

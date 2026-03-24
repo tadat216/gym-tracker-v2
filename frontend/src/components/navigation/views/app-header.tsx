@@ -1,6 +1,5 @@
 import { Menu } from "lucide-react";
 import { Button } from "@/ui/button";
-import { ModeToggle } from "@/components/mode-toggle";
 import type { AppHeaderProps } from "../types";
 
 const AppHeader = ({ title, onMenuClick }: AppHeaderProps) => {
@@ -10,7 +9,7 @@ const AppHeader = ({ title, onMenuClick }: AppHeaderProps) => {
         <Menu className="size-5" />
       </Button>
       <h1 className="text-lg font-semibold">{title}</h1>
-      <ModeToggle />
+      <div className="w-9" />
     </header>
   );
 };

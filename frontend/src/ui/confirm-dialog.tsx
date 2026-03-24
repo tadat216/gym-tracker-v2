@@ -17,7 +17,7 @@ interface ConfirmDialogProps {
 function ConfirmDialog({ open, title, description, confirmLabel, loadingLabel, isLoading, onConfirm, onCancel }: ConfirmDialogProps) {
   return (
     <AlertDialog open={open} onOpenChange={(isOpen) => !isOpen && onCancel()}>
-      <AlertDialogContent>
+      <AlertDialogContent className="max-w-75 rounded-2xl">
         <AlertDialogHeader>
           <AlertDialogTitle>{title}</AlertDialogTitle>
           <AlertDialogDescription>{description}</AlertDialogDescription>

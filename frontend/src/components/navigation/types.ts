@@ -35,4 +35,5 @@ export interface NavLinkProps {
   href: string;
   isActive: boolean;
   onClick: (path: string) => void;
+  className?: string;
 }

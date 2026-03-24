@@ -24,9 +24,9 @@ function FormField({
         id={id} type={type} value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder} aria-invalid={!!error}
-        className={cn("h-auto rounded-[10px] bg-card/30 px-3.5 py-3 text-[15px] font-medium", error && "border-destructive")}
+        className={cn("h-auto rounded-[10px] bg-white/3 px-3.5 py-3 text-[15px] font-medium", error && "border-destructive")}
       />
-      {error ? <p className="mt-1 text-xs font-medium text-destructive">{error}</p> : null}
+      {error ? <p role="alert" className="mt-1 text-xs font-medium text-destructive">{error}</p> : null}
     </div>
   );
 }

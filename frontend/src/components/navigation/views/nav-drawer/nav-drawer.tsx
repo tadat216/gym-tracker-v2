@@ -6,6 +6,7 @@ import {
   SheetTitle,
 } from "@/ui/sheet";
 import { Separator } from "@/ui/separator";
+import { ModeToggle } from "@/components/mode-toggle";
 import NavDrawerHeader from "./nav-drawer-header";
 import NavDrawerLinks from "./nav-drawer-links";
 import NavLink from "./nav-link";
@@ -35,6 +36,10 @@ const NavDrawer = ({
           />
         </div>
         <Separator />
+        <div className="px-2 py-2">
+          <ModeToggle />
+        </div>
+        <Separator />
         <div className="px-2 pb-6 pt-2">
           <NavLink
             icon={LogOut}
@@ -42,6 +47,7 @@ const NavDrawer = ({
             href="logout"
             isActive={false}
             onClick={onNavigate}
+            className="text-destructive opacity-70 hover:text-destructive"
           />
         </div>
       </SheetContent>

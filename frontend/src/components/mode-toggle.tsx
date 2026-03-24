@@ -1,89 +1,53 @@
-import { Moon, Sun } from "lucide-react";
-import { useState, useRef, useEffect } from "react";
-import { buttonVariants } from "@/ui/button";
+import { Sun, Moon, Monitor } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTheme } from "@/components/theme-provider";
 
 export function ModeToggle() {
-  const { setTheme } = useTheme();
-  const [open, setOpen] = useState(false);
-  const menuRef = useRef<HTMLDivElement>(null);
-  const triggerRef = useRef<HTMLButtonElement>(null);
-
-  useEffect(() => {
-    if (!open) return;
-    function handleClickOutside(event: MouseEvent) {
-      if (
-        menuRef.current &&
-        !menuRef.current.contains(event.target as Node) &&
-        triggerRef.current &&
-        !triggerRef.current.contains(event.target as Node)
-      ) {
-        setOpen(false);
-      }
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [open]);
+  const { theme, setTheme } = useTheme();
 
   return (
-    <div className="relative inline-block">
-      <button
-        ref={triggerRef}
-        type="button"
-        aria-label="Toggle theme"
-        aria-haspopup="menu"
-        aria-expanded={open ? "true" : "false"}
-        className={buttonVariants({ variant: "ghost", size: "icon" })}
-        onClick={() => setOpen((prev) => !prev)}
-      >
-        <Sun className="h-5 w-5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-        <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-        <span className="sr-only">Toggle theme</span>
-      </button>
-      {open && (
-        <div
-          ref={menuRef}
-          role="menu"
+    <div className="mx-3 flex items-center justify-between rounded-[10px] border border-border/40 bg-white/2 px-4 py-3">
+      <span className="text-[13px] font-semibold text-muted-foreground">
+        Theme
+      </span>
+      <div className="flex gap-1">
+        <button
+          type="button"
+          aria-label="Light theme"
+          onClick={() => setTheme("light")}
           className={cn(
-            "absolute right-0 z-50 min-w-32 rounded-lg bg-popover p-1 text-popover-foreground shadow-md ring-1 ring-foreground/10",
+            "flex size-8 items-center justify-center rounded-lg text-muted-foreground/60",
+            theme === "light" &&
+              "border border-primary/15 bg-primary/10 text-primary",
           )}
         >
-          <button
-            role="menuitem"
-            type="button"
-            className="relative flex w-full cursor-default items-center rounded-md px-1.5 py-1 text-sm outline-none select-none focus:bg-accent focus:text-accent-foreground"
-            onClick={() => {
-              setTheme("light");
-              setOpen(false);
-            }}
-          >
-            Light
-          </button>
-          <button
-            role="menuitem"
-            type="button"
-            className="relative flex w-full cursor-default items-center rounded-md px-1.5 py-1 text-sm outline-none select-none focus:bg-accent focus:text-accent-foreground"
-            onClick={() => {
-              setTheme("dark");
-              setOpen(false);
-            }}
-          >
-            Dark
-          </button>
-          <button
-            role="menuitem"
-            type="button"
-            className="relative flex w-full cursor-default items-center rounded-md px-1.5 py-1 text-sm outline-none select-none focus:bg-accent focus:text-accent-foreground"
-            onClick={() => {
-              setTheme("system");
-              setOpen(false);
-            }}
-          >
-            System
-          </button>
-        </div>
-      )}
+          <Sun className="size-3.5" />
+        </button>
+        <button
+          type="button"
+          aria-label="Dark theme"
+          onClick={() => setTheme("dark")}
+          className={cn(
+            "flex size-8 items-center justify-center rounded-lg text-muted-foreground/60",
+            theme === "dark" &&
+              "border border-primary/15 bg-primary/10 text-primary",
+          )}
+        >
+          <Moon className="size-3.5" />
+        </button>
+        <button
+          type="button"
+          aria-label="System theme"
+          onClick={() => setTheme("system")}
+          className={cn(
+            "flex size-8 items-center justify-center rounded-lg text-muted-foreground/60",
+            theme === "system" &&
+              "border border-primary/15 bg-primary/10 text-primary",
+          )}
+        >
+          <Monitor className="size-3.5" />
+        </button>
+      </div>
     </div>
   );
 }
