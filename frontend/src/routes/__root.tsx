@@ -8,6 +8,7 @@ import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 import { useAuthStore } from "@/stores/auth-store";
 import { useAuth } from "@/hooks/use-auth";
 import { NavigationContainer } from "@/components/navigation";
+import { Toaster } from "@/ui/sonner";
 
 const PAGE_TITLES: Record<string, string> = {
   "/": "Home",
@@ -35,6 +36,7 @@ function RootComponent(): React.JSX.Element {
       <>
         <Outlet />
         {import.meta.env.DEV && <TanStackRouterDevtools />}
+        <Toaster />
       </>
     );
   }
@@ -51,6 +53,7 @@ function RootComponent(): React.JSX.Element {
         </main>
       </div>
       {import.meta.env.DEV && <TanStackRouterDevtools />}
+      <Toaster />
     </>
   );
 }
