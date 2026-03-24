@@ -3,6 +3,10 @@ import { render, screen } from "@testing-library/react";
 import { userEvent } from "@testing-library/user-event";
 import NavDrawer from "@/components/navigation/views/nav-drawer/nav-drawer";
 
+vi.mock("@/components/mode-toggle", () => ({
+  ModeToggle: () => <div data-testid="mode-toggle" />,
+}));
+
 describe("NavDrawer", () => {
   const defaultProps = {
     isOpen: true,

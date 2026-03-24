@@ -16,21 +16,16 @@ Mobile-first admin user management page for the gym tracker app. Single-page lay
 - **Component granularity:** Small focused files — each state (loading, empty) is its own component for isolated testing
 - **Data fetching:** Orval-generated hooks (`useListUsers`, `useCreateUser`, `useUpdateUser`, `useDeleteUser`). No optimistic UI — wait for server confirmation.
 - **Component pattern:** Hooks/Types/Views/Container — same as login component
+- **Navigation:** Hamburger drawer (shared layout component) with nav links, theme toggle, and logout
+- **No admin toggle in form:** `is_admin` stays in the data layer and API, but the form UI only shows username, email, password — no toggle. Admin badge still displays as read-only in user list rows.
 
 ## Backend Prerequisites
 
-Before building the frontend, the backend schemas need updating:
-
-1. **Add `is_admin` to `UserCreate`:** `is_admin: bool = False` — allows admin to set admin flag when creating users
-2. **Add `is_admin` to `UserUpdate`:** `is_admin: bool | None = None` — allows admin to toggle admin flag when editing users
-3. **Regenerate API client:** Run `scripts/generate-api.sh` after backend changes so Orval picks up the new fields
-
-These are small schema additions. The `update_user` handler uses `model_dump(exclude_unset=True)` + `setattr`, so it will handle `is_admin` automatically once added to the schema. The `create_user` handler manually constructs the `User` object, so it will also need `is_admin=body.is_admin` added to the constructor.
+Backend schemas already include `is_admin` in `UserCreate` and `UserUpdate`. No changes needed.
 
 ## Dependencies to Install
 
-- shadcn/ui components: `sheet`, `alert-dialog`, `switch`, `badge`, `sonner` (toast)
-- `@fontsource/manrope` or Google Fonts link for Manrope font
+- shadcn/ui components: `sheet`, `alert-dialog`, `badge`, `sonner` (toast)
 
 ## Architecture
 
@@ -45,30 +40,59 @@ These are small schema additions. The `update_user` handler uses `model_dump(exc
 ### 2. Component Structure
 
 ```
-src/components/users/
-├── container.tsx
-├── types.ts
-├── index.ts
-├── hooks/
-│   ├── use-users-data.ts
-│   ├── use-user-form.ts
-│   └── index.ts
-└── views/
-    ├── users-page.tsx
-    ├── user-form-sheet.tsx
-    ├── user-list/
-    │   ├── user-list.tsx
-    │   ├── user-row.tsx
-    │   ├── user-list-skeleton.tsx
-    │   ├── user-list-empty.tsx
-    │   └── index.ts
-    ├── delete-confirm/
-    │   ├── delete-confirm.tsx
-    │   └── index.ts
-    └── index.ts
+src/components/
+├── app-drawer/                      # Shared navigation drawer
+│   ├── app-drawer.tsx               # Drawer: brand, nav links, theme toggle, logout
+│   ├── index.ts
+│   └── types.ts
+├── users/                           # CRUD page
+│   ├── container.tsx
+│   ├── types.ts
+│   ├── index.ts
+│   ├── hooks/
+│   │   ├── use-users-data.ts
+│   │   ├── use-user-form.ts
+│   │   └── index.ts
+│   └── views/
+│       ├── users-page.tsx
+│       ├── user-form-sheet.tsx
+│       ├── user-list/
+│       │   ├── user-list.tsx
+│       │   ├── user-row.tsx
+│       │   ├── user-list-skeleton.tsx
+│       │   ├── user-list-empty.tsx
+│       │   └── index.ts
+│       ├── delete-confirm/
+│       │   ├── delete-confirm.tsx
+│       │   └── index.ts
+│       └── index.ts
 ```
 
-### 3. Types
+### 3. Navigation Drawer — `src/components/app-drawer/`
+
+Shared layout component used by all authenticated pages. Triggered by hamburger icon in page header.
+
+**app-drawer.tsx:**
+```
+Props:
+  - open: boolean
+  - onClose: () => void
+  - currentPath: string (to highlight active nav item)
+
+Renders:
+  - Uses shadcn Sheet (side="left")
+  - Header: "GYM TRACKER" brand name + logged-in user email
+  - Nav links:
+    - Home (lucide-react Home icon) → "/"
+    - Users (lucide-react Users icon) → "/admin/users"
+    - Active link highlighted with accent bg + border
+  - Theme toggle: ModeToggle component (Sun / Moon / Monitor icons inline)
+  - Footer: "Log out" link (lucide-react LogOut icon), calls useAuth().logout + navigate to /login
+```
+
+Uses `Sheet` from shadcn (side="left") for the slide-in drawer. Each nav link uses TanStack Router's `Link` or `useNavigate`.
+
+### 4. Types
 
 **File:** `src/components/users/types.ts`
 
@@ -88,7 +112,7 @@ UsersPageProps:
   - deleteConfirmOpen: boolean
   - onCreateClick: () => void
   - onUserClick: (user: UserRead) => void
-  - onFormChange: (field: string, value: string | boolean) => void
+  - onFormChange: (field: string, value: string) => void
   - onFormSubmit: () => void
   - onFormClose: () => void
   - onDeleteClick: () => void
@@ -114,7 +138,7 @@ UserFormSheetProps:
   - isSelfSelected: boolean
   - isSubmitting: boolean
   - error: string | null
-  - onChange: (field: string, value: string | boolean) => void
+  - onChange: (field: string, value: string) => void
   - onSubmit: () => void
   - onClose: () => void
   - onDeleteClick: () => void
@@ -123,7 +147,6 @@ UserFormValues:
   - username: string
   - email: string
   - password: string
-  - is_admin: boolean
 
 DeleteConfirmProps:
   - open: boolean
@@ -133,7 +156,7 @@ DeleteConfirmProps:
   - onCancel: () => void
 ```
 
-### 4. Hooks
+### 5. Hooks
 
 #### use-users-data.ts — Data layer
 
@@ -177,7 +200,7 @@ Actions:
 Returns: all state + actions
 ```
 
-### 5. Container
+### 6. Container
 
 **File:** `src/components/users/container.tsx`
 
@@ -193,11 +216,11 @@ Wires hooks to the page view:
 - Handles errors: catches 409 from mutations, sets `submitError` to "Username or email already taken"
 - Passes all props to `<UsersPage />`
 
-### 6. Views (all pure — props only, no hooks)
+### 7. Views (all pure — props only, no hooks)
 
 #### users-page.tsx — Page composition
 
-- Page header: "Users" title (Manrope 800) + "{count} members" subtitle + `<ThemeToggle />` in top-right (from `src/components/theme-toggle.tsx`, provided by theme system)
+- Page header: "Users" title (Manrope 800) + "{count} members" subtitle on the left + hamburger button (lucide-react `Menu` icon) on the right that opens `<AppDrawer />`
 - Conditional content:
   - `isLoading` → `<UserListSkeleton />`
   - `users.length === 0` → `<UserListEmpty />`
@@ -241,7 +264,6 @@ Wires hooks to the page view:
   - Username: text input
   - Email: text input
   - Password: text input, placeholder varies by mode ("Required" vs "Leave empty to keep current")
-  - Administrator: shadcn Switch toggle
 - Inline error message below form (red text, shown when `error` is set)
 - Submit button: "Create User" or "Save Changes", shows loading state when `isSubmitting`
 - Delete button: only in edit mode, red text style, calls `onDeleteClick`. Hidden when `isSelfSelected` (admin cannot delete themselves)
@@ -254,7 +276,7 @@ Wires hooks to the page view:
 - Cancel button: muted style
 - Delete button: destructive style, shows loading state when `isDeleting`
 
-### 7. Visual Design — Midnight Steel Theme
+### 8. Visual Design — Midnight Steel Theme
 
 **Colors:**
 - Background: `#0c0f14`
@@ -320,5 +342,5 @@ All endpoints require admin authentication (`Authorization: Bearer <token>`, use
 
 ## Prerequisites
 
-- **Theme system** (`2026-03-23-theme-system-design.md`) must be implemented first — provides `<ThemeToggle />` component and dark/light mode switching
+- **Theme system** (`2026-03-23-theme-system-design.md`) must be implemented first — provides `ThemeProvider`, `useTheme`, and `ModeToggle` component used inside the drawer
 - **Login redesign** (`2026-03-22-login-redesign-design.md`) — should be done before this so the full app has consistent styling

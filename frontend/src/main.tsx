@@ -6,7 +6,15 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { routeTree } from "./routeTree.gen";
 import "./App.css";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      staleTime: 30_000,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 const router = createRouter({ routeTree });
 
 declare module "@tanstack/react-router" {

@@ -111,27 +111,27 @@ ThemeProvider wraps everything so the theme is available in all routes including
 
 ### 4. Mode Toggle — `src/components/mode-toggle.tsx`
 
-Uses shadcn `DropdownMenu` + lucide-react icons:
+Inline icon buttons (not a dropdown) — designed to live inside the navigation drawer:
 
 ```
+Props:
+  - none (reads from useTheme hook directly)
+
 Renders:
-  - Trigger: Button (variant="ghost", size="icon") with Sun/Moon icons
-    - Sun icon: visible in light mode (rotates + scales to hidden in dark)
-    - Moon icon: visible in dark mode (rotates + scales to hidden in light)
-  - Dropdown menu with 3 items:
-    - Light (onClick: setTheme("light"))
-    - Dark (onClick: setTheme("dark"))
-    - System (onClick: setTheme("system"))
+  - Row with "Theme" label on the left, 3 icon buttons on the right:
+    - Sun icon (lucide-react Sun) → setTheme("light")
+    - Moon icon (lucide-react Moon) → setTheme("dark")
+    - Monitor icon (lucide-react Monitor) → setTheme("system")
+  - Active icon is visually highlighted (accent background + border)
   - Uses useTheme() to get current theme and setTheme
 ```
 
-This gives users explicit control over all 3 modes (unlike a simple toggle that hides the "system" option).
+No dropdown menu needed — all 3 options are always visible as icon buttons.
 
 ### 5. Where the Toggle Lives
 
-- **Login page:** No toggle visible (no header). Theme follows stored preference or system default.
-- **Authenticated pages:** Mode toggle in the page header area (e.g., `users-page.tsx` renders it in the top-right of the header bar)
-- Future: when a shared layout/navbar exists, move the toggle there
+- **Login page:** No toggle visible (no drawer). Theme follows stored preference or system default.
+- **Authenticated pages:** Mode toggle lives inside the navigation drawer (hamburger menu), not in the page header. Placed between nav links and logout button.
 
 ## What Changes
 
@@ -139,20 +139,15 @@ This gives users explicit control over all 3 modes (unlike a simple toggle that 
 |------|--------|
 | `src/App.css` | Update `:root` light theme colors to Steel Light palette |
 | `src/components/theme-provider.tsx` | New file — React Context provider + useTheme hook |
-| `src/components/mode-toggle.tsx` | New file — dropdown menu with Light/Dark/System options |
+| `src/components/mode-toggle.tsx` | New file — inline 3-icon theme switcher (Sun/Moon/Monitor) |
 | `src/main.tsx` | Wrap app with `<ThemeProvider>` |
 | `src/routes/__root.tsx` | Remove any hardcoded dark class logic if present |
 
 ## Dependencies to Install
 
-- shadcn/ui component: `dropdown-menu` (for the mode toggle menu)
+None — `lucide-react` is already installed. No shadcn dropdown needed since mode toggle uses plain icon buttons.
 
 ## Testing Strategy
 
 1. **theme-provider tests** — verify context provides theme/setTheme, applies correct class to documentElement, reads from localStorage, falls back to defaultTheme
-2. **mode-toggle tests** — renders trigger button, opens dropdown with 3 options, calls setTheme with correct value on click
-
-## Dependencies
-
-- `lucide-react` — already installed
-- shadcn `dropdown-menu` — needs to be added via `npx shadcn@latest add dropdown-menu`
+2. **mode-toggle tests** — renders 3 icon buttons (Sun, Moon, Monitor), highlights active theme, calls setTheme with correct value on click
