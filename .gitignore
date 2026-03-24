@@ -36,3 +36,5 @@ Thumbs.db
 test-results/
 playwright-report/
 htmlcov/
+
+.superpowers/
