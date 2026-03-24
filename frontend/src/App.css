@@ -159,3 +159,17 @@
     @apply font-sans;
     }
 }
+
+/* ===== Shared CRUD utilities ===== */
+
+@utility card-row {
+  @apply flex w-full items-center gap-3.5 rounded-[14px] border border-border/50
+    bg-gradient-to-br from-card/80 to-card/40 p-3.5 text-left
+    transition-colors hover:border-primary/20;
+}
+
+@utility avatar-initial {
+  @apply flex size-[42px] shrink-0 items-center justify-center rounded-xl
+    border border-primary/15 bg-gradient-to-br from-accent to-accent/60
+    text-base font-bold text-primary;
+}
