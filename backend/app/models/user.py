@@ -12,6 +12,7 @@ class User(SQLModel, table=True):
     email: str = Field(unique=True)
     password_hash: str
     is_admin: bool = Field(default=False)
+    is_system: bool = Field(default=False)
     created_at: datetime = Field(
         default_factory=lambda: datetime.now(UTC),
         sa_type=DateTime(timezone=True),
