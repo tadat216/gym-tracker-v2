@@ -258,19 +258,19 @@ Admin can modify these defaults via a dedicated "Default Exercises" page in the 
 - Core (#6366F1)
 - Cardio (#F97316)
 
-### Exercises (examples per group)
+### Exercises per group
 
-**Chest:** Bench Press (weight), Incline Dumbbell Press (weight), Push-ups (bodyweight), Cable Fly (weight)
+**Chest:** Bench Press (weight), Dumbbell Press (weight), Incline Dumbbell Press (weight), Push-ups (bodyweight), Cable Fly (weight), Machine Fly (weight)
 
-**Lats:** Pull-ups (bodyweight), Lat Pulldown (weight), Seated Cable Row (weight), Dumbbell Row (weight)
+**Lats:** Pull-ups (bodyweight), Lat Pulldown (weight), Seated Cable Row (weight), Dumbbell Row (weight), Machine Close Grip Row (weight)
 
-**Upper Back:** Barbell Row (weight), Face Pull (weight), Reverse Fly (weight), Shrugs (weight)
+**Upper Back:** Barbell Row (weight), Face Pull (weight), Shrugs (weight), Machine High Grip Row (weight)
 
-**Shoulders:** Overhead Press (weight), Lateral Raise (weight), Front Raise (weight)
+**Shoulders:** Overhead Press (weight), Overhead Press Machine (weight), Lateral Raise (weight), Lateral Cable Raise (weight), Front Raise (weight), Reverse Fly (weight), Reverse Cable Fly (weight)
 
-**Biceps:** Barbell Curl (weight), Dumbbell Curl (weight), Hammer Curl (weight)
+**Biceps:** Barbell Curl (weight), Dumbbell Curl (weight), Hammer Curl (weight), Cable Barbell Curl (weight), Cable Dumbbell Curl (weight), Cable Hammer Curl (weight)
 
-**Triceps:** Tricep Pushdown (weight), Skull Crusher (weight), Dips (bodyweight)
+**Triceps:** Tricep Pushdown (weight), Skull Crusher (weight), Dips (bodyweight), Cable Tricep Pushdown (weight), Cable Overhead Tricep Extension (weight)
 
 **Quads:** Squat (weight), Leg Press (weight), Leg Extension (weight), Bulgarian Split Squat (weight)
 
@@ -278,6 +278,6 @@ Admin can modify these defaults via a dedicated "Default Exercises" page in the 
 
 **Calves:** Standing Calf Raise (weight), Seated Calf Raise (weight)
 
-**Core:** Plank (duration), Hanging Leg Raise (bodyweight), Ab Wheel Rollout (bodyweight)
+**Core:** Plank (duration), Hanging Leg Raise (bodyweight), Ab Wheel Rollout (bodyweight), Cable Crunch (weight)
 
 **Cardio:** Treadmill (duration), Jump Rope (duration)
