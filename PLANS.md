@@ -14,5 +14,7 @@
 | 9 | docs/superpowers/specs/2026-03-22-admin-users-crud-design.md | Admin users CRUD design spec | ✅ Done | 8 |
 | 10 | docs/superpowers/plans/2026-03-23-theme-and-login-redesign.md | Theme system + login redesign | ✅ Done | 7, 8 |
 | 11 | docs/superpowers/plans/2026-03-24-admin-users-crud.md | Admin users CRUD page | ⬜ Pending | 9, 10 |
+| 12 | docs/superpowers/specs/2026-03-26-workout-tables-design.md | Workout tables design spec | ✅ Done | - |
+| 13 | docs/superpowers/plans/2026-03-26-workout-tables.md | Workout tables implementation | ⬜ Pending | 12 |
 
 ## Status legend: ⬜ Pending | 🔄 In Progress | ✅ Done
