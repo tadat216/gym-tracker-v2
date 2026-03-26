@@ -33,6 +33,7 @@ from app.auth.password import hash_password  # noqa: E402
 from app.config import settings  # noqa: E402
 from app.database import get_session  # noqa: E402
 from app.main import app  # noqa: E402
+from app.models.muscle_group import MuscleGroup  # noqa: E402, F401 — registers table with metadata
 from app.models.user import User  # noqa: E402, F401 — registers table with metadata
 
 

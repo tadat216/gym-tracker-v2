@@ -1,0 +1,22 @@
+from datetime import UTC, datetime
+
+from sqlalchemy import DateTime
+from sqlmodel import Field, SQLModel
+
+
+class MuscleGroupBase(SQLModel):
+    id: int
+    name: str
+    color: str
+
+
+class MuscleGroup(MuscleGroupBase, table=True):
+    __tablename__ = "muscle_groups"
+
+    id: int | None = Field(default=None, primary_key=True)
+    user_id: int = Field(foreign_key="users.id")
+    is_active: bool = Field(default=True)
+    created_at: datetime = Field(
+        default_factory=lambda: datetime.now(UTC),
+        sa_type=DateTime(timezone=True),
+    )
