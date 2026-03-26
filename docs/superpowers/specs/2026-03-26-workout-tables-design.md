@@ -8,6 +8,7 @@ Database schema for the gym tracker's core workout functionality: muscle groups,
 
 - **One muscle group per exercise** — muscle groups are organizational categories, not scientific muscle mapping
 - **Copy-on-create** — system default muscle groups and exercises are copied into each user's data on account creation. No shared/global rows. Users fully own their data.
+- **System user** — a special user (`username = "system"`, no password hash) whose muscle groups and exercises serve as the default templates. On new user signup, copy all active data from the system user. Admin manages defaults via a dedicated UI page that reads/writes the system user's data. No extra tables needed.
 - **Soft delete** — `is_active` flag on muscle groups and exercises. Deactivated items disappear from pickers but remain in historical logs.
 - **Plans vs Logs** — separate tables. Starting a session from a plan copies exercises into the session. The session is independent from that point — users can modify freely.
 - **Single `weight` column** — always in kg, used for barbell weight, extra weight (vest/belt), etc. No unit tracking.
@@ -238,7 +239,11 @@ Each entity has a **Base model** (API response — lean) and a **DB model** (ful
 
 ## Pre-seeded Data
 
-On account creation, copy these into the user's data:
+A `system` user is created during initial database setup (migration or seed script). This user has no password hash and cannot log in. Its muscle groups and exercises are the defaults that get copied to every new user on signup.
+
+Admin can modify these defaults via a dedicated "Default Exercises" page in the admin UI, which reads/writes the system user's data.
+
+### Initial seed data for the system user
 
 ### Muscle Groups
 - Chest (#EF4444)
