@@ -4,15 +4,18 @@ from sqlalchemy import DateTime
 from sqlmodel import Field, SQLModel
 
 
-class User(SQLModel, table=True):
-    __tablename__ = "users"
+class MuscleGroupBase(SQLModel):
+    id: int
+    name: str
+    color: str
+
+
+class MuscleGroup(MuscleGroupBase, table=True):
+    __tablename__ = "muscle_groups"
 
     id: int | None = Field(default=None, primary_key=True)
-    username: str = Field(unique=True, index=True)
-    email: str = Field(unique=True)
-    password_hash: str
-    is_admin: bool = Field(default=False)
-    is_system: bool = Field(default=False)
+    user_id: int = Field(foreign_key="users.id")
+    is_active: bool = Field(default=True)
     created_at: datetime = Field(
         default_factory=lambda: datetime.now(UTC),
         sa_type=DateTime(timezone=True),

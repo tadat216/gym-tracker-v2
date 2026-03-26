@@ -17,6 +17,8 @@ async def get_current_user(
     user = await session.get(User, payload.sub)
     if user is None:
         raise HTTPException(status_code=401, detail="User not found")
+    if user.is_system:
+        raise HTTPException(status_code=403, detail="System user cannot access API")
     return user
 
 

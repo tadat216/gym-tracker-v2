@@ -10,12 +10,19 @@ from app.database import async_session
 from app.models.user import User
 from app.routes.auth import router as auth_router
 from app.routes.users import router as users_router
+from app.seed import create_system_user
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     async with async_session() as session:
-        result = await session.execute(select(User).where(User.is_admin == True))  # noqa: E712
+        # Create system user with seed data
+        await create_system_user(session)
+
+        # Create admin user if none exists
+        result = await session.execute(
+            select(User).where(User.is_admin == True)  # noqa: E712
+        )
         if result.scalar_one_or_none() is None:
             admin = User(
                 username=settings.ADMIN_USERNAME,
@@ -24,7 +31,8 @@ async def lifespan(app: FastAPI):
                 is_admin=True,
             )
             session.add(admin)
-            await session.commit()
+
+        await session.commit()
 
     yield
 
