@@ -58,7 +58,11 @@ SEED_EXERCISES = [
     {"name": "Skull Crusher", "type": "weight", "muscle_group": "Triceps"},
     {"name": "Dips", "type": "bodyweight", "muscle_group": "Triceps"},
     {"name": "Cable Tricep Pushdown", "type": "weight", "muscle_group": "Triceps"},
-    {"name": "Cable Overhead Tricep Extension", "type": "weight", "muscle_group": "Triceps"},
+    {
+        "name": "Cable Overhead Tricep Extension",
+        "type": "weight",
+        "muscle_group": "Triceps",
+    },
     # Quads
     {"name": "Squat", "type": "weight", "muscle_group": "Quads"},
     {"name": "Leg Press", "type": "weight", "muscle_group": "Quads"},

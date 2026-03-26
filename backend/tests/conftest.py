@@ -24,7 +24,11 @@ socket.socket.connect = _guarded_connect
 
 import pytest_asyncio  # noqa: E402
 from httpx import ASGITransport, AsyncClient  # noqa: E402
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine  # noqa: E402
+from sqlalchemy.ext.asyncio import (  # noqa: E402
+    AsyncSession,
+    async_sessionmaker,
+    create_async_engine,
+)
 from sqlalchemy.pool import NullPool  # noqa: E402
 from sqlmodel import SQLModel  # noqa: E402
 
@@ -33,14 +37,14 @@ from app.auth.password import hash_password  # noqa: E402
 from app.config import settings  # noqa: E402
 from app.database import get_session  # noqa: E402
 from app.main import app  # noqa: E402
-from app.models.exercise import Exercise  # noqa: E402, F401 — registers table with metadata
-from app.models.muscle_group import MuscleGroup  # noqa: E402, F401 — registers table with metadata
-from app.models.plan_exercise import PlanExercise  # noqa: E402, F401 — registers table with metadata
-from app.models.user import User  # noqa: E402, F401 — registers table with metadata
-from app.models.exercise_set import ExerciseSet  # noqa: E402, F401 — registers table with metadata
-from app.models.session_exercise import SessionExercise  # noqa: E402, F401 — registers table with metadata
-from app.models.workout_plan import WorkoutPlan  # noqa: E402, F401 — registers table with metadata
-from app.models.workout_session import WorkoutSession  # noqa: E402, F401 — registers table with metadata
+from app.models.exercise import Exercise  # noqa: E402, F401
+from app.models.exercise_set import ExerciseSet  # noqa: E402, F401
+from app.models.muscle_group import MuscleGroup  # noqa: E402, F401
+from app.models.plan_exercise import PlanExercise  # noqa: E402, F401
+from app.models.session_exercise import SessionExercise  # noqa: E402, F401
+from app.models.user import User  # noqa: E402, F401
+from app.models.workout_plan import WorkoutPlan  # noqa: E402, F401
+from app.models.workout_session import WorkoutSession  # noqa: E402, F401
 
 
 @pytest_asyncio.fixture(scope="session")

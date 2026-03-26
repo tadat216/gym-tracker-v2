@@ -1,18 +1,25 @@
 from sqlmodel import select
 
-from app.models.exercise import Exercise, ExerciseType
+from app.models.exercise import Exercise
 from app.models.muscle_group import MuscleGroup
 from app.models.user import User
-from app.seed import SEED_EXERCISES, SEED_MUSCLE_GROUPS, copy_defaults_to_user, create_system_user
+from app.seed import (
+    SEED_EXERCISES,
+    SEED_MUSCLE_GROUPS,
+    copy_defaults_to_user,
+    create_system_user,
+)
 
 
 class TestSeedData:
     async def test_seed_data_constants_valid(self):
-        """Seed data lists should not be empty and all exercises should reference valid groups."""
+        """All exercises should reference valid groups."""
         assert len(SEED_MUSCLE_GROUPS) == 11
         group_names = {g["name"] for g in SEED_MUSCLE_GROUPS}
         for ex in SEED_EXERCISES:
-            assert ex["muscle_group"] in group_names, f"{ex['name']} references unknown group {ex['muscle_group']}"
+            assert ex["muscle_group"] in group_names, (
+                f"{ex['name']} references unknown group"
+            )
             assert ex["type"] in ("weight", "bodyweight", "duration")
 
     async def test_create_system_user(self, session):

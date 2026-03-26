@@ -14,7 +14,10 @@ class TestUserModel:
     def test_columns_exist(self):
         mapper = inspect(User)
         column_names = {col.key for col in mapper.columns}
-        expected = {"id", "username", "email", "password_hash", "is_admin", "is_system", "created_at"}
+        expected = {
+            "id", "username", "email", "password_hash",
+            "is_admin", "is_system", "created_at",
+        }
         assert expected == column_names
 
     def test_id_is_primary_key(self):
