@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import create_async_engine
 from sqlmodel import SQLModel
 
 from app.config import settings
+from app.models.exercise import Exercise  # noqa: F401 — registers table with metadata
 from app.models.muscle_group import MuscleGroup  # noqa: F401 — registers table with metadata
 from app.models.user import User  # noqa: F401 — registers table with metadata
 
