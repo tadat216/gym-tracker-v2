@@ -101,6 +101,124 @@ Database schema for the gym tracker's core workout functionality: muscle groups,
 | duration | int | nullable | seconds — used by duration type |
 | is_completed | bool | not null, default false | |
 
+## Model Schemas
+
+Each entity has a **Base model** (API response — lean) and a **DB model** (full table — extends Base).
+
+### MuscleGroupBase (API response)
+| Field | Type |
+|-------|------|
+| id | int |
+| name | str |
+| color | str |
+
+### MuscleGroup (DB model, extends MuscleGroupBase)
+| Extra Field | Type |
+|-------------|------|
+| user_id | int |
+| is_active | bool |
+| created_at | datetime |
+
+---
+
+### ExerciseBase (API response)
+| Field | Type |
+|-------|------|
+| id | int |
+| name | str |
+| type | ExerciseType |
+| muscle_group_id | int |
+
+### Exercise (DB model, extends ExerciseBase)
+| Extra Field | Type |
+|-------------|------|
+| user_id | int |
+| is_active | bool |
+| created_at | datetime |
+
+---
+
+### WorkoutPlanBase (API response)
+| Field | Type |
+|-------|------|
+| id | int |
+| name | str |
+
+### WorkoutPlan (DB model, extends WorkoutPlanBase)
+| Extra Field | Type |
+|-------------|------|
+| user_id | int |
+| created_at | datetime |
+| updated_at | datetime |
+
+---
+
+### PlanExerciseBase (API response)
+| Field | Type |
+|-------|------|
+| id | int |
+| exercise_id | int |
+| sort_order | int |
+
+### PlanExercise (DB model, extends PlanExerciseBase)
+| Extra Field | Type |
+|-------------|------|
+| plan_id | int |
+
+---
+
+### WorkoutSessionBase (API response)
+| Field | Type |
+|-------|------|
+| id | int |
+| plan_id | int \| None |
+| date | date |
+| status | SessionStatus |
+| notes | str \| None |
+| started_at | datetime |
+| completed_at | datetime \| None |
+
+### WorkoutSession (DB model, extends WorkoutSessionBase)
+| Extra Field | Type |
+|-------------|------|
+| user_id | int |
+
+---
+
+### SessionExerciseBase (API response)
+| Field | Type |
+|-------|------|
+| id | int |
+| exercise_id | int |
+| sort_order | int |
+| status | ExerciseStatus |
+
+### SessionExercise (DB model, extends SessionExerciseBase)
+| Extra Field | Type |
+|-------------|------|
+| session_id | int |
+
+---
+
+### ExerciseSetBase (API response)
+| Field | Type |
+|-------|------|
+| id | int |
+| set_number | int |
+| reps | int \| None |
+| weight | Decimal \| None |
+| duration | int \| None |
+| is_completed | bool |
+
+### ExerciseSet (DB model, extends ExerciseSetBase)
+| Extra Field | Type |
+|-------------|------|
+| session_exercise_id | int |
+
+---
+
+**Pattern:** Base models exclude `user_id`, `is_active`, `created_at`, and parent FK fields (like `session_id`, `plan_id` on child entities) — those are internal/contextual. The parent already knows its children, so the FK back to parent is redundant in nested responses.
+
 ## UX Flows
 
 ### Start from plan
