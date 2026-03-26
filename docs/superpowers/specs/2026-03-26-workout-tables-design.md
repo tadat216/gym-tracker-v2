@@ -12,6 +12,7 @@ Database schema for the gym tracker's core workout functionality: muscle groups,
 - **Plans vs Logs** — separate tables. Starting a session from a plan copies exercises into the session. The session is independent from that point — users can modify freely.
 - **Single `weight` column** — always in kg, used for barbell weight, extra weight (vest/belt), etc. No unit tracking.
 - **3 exercise types** — `weight`, `bodyweight`, `duration`. All share one `exercise_sets` table with nullable fields.
+- **Base/DB model split** — each entity has a `FooBase(BaseModel)` with only the fields needed for API responses (id, name, etc.) and a `Foo(SQLModel, table=True)` with all DB columns (user_id, is_active, created_at). API endpoints return the Base schema. This keeps responses lean for both REST and future MCP tool integration.
 
 ## Exercise Types
 
