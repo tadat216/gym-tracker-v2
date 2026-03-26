@@ -37,7 +37,10 @@ from app.models.exercise import Exercise  # noqa: E402, F401 — registers table
 from app.models.muscle_group import MuscleGroup  # noqa: E402, F401 — registers table with metadata
 from app.models.plan_exercise import PlanExercise  # noqa: E402, F401 — registers table with metadata
 from app.models.user import User  # noqa: E402, F401 — registers table with metadata
+from app.models.exercise_set import ExerciseSet  # noqa: E402, F401 — registers table with metadata
+from app.models.session_exercise import SessionExercise  # noqa: E402, F401 — registers table with metadata
 from app.models.workout_plan import WorkoutPlan  # noqa: E402, F401 — registers table with metadata
+from app.models.workout_session import WorkoutSession  # noqa: E402, F401 — registers table with metadata
 
 
 @pytest_asyncio.fixture(scope="session")

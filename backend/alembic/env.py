@@ -10,7 +10,10 @@ from app.models.exercise import Exercise  # noqa: F401 — registers table with 
 from app.models.muscle_group import MuscleGroup  # noqa: F401 — registers table with metadata
 from app.models.plan_exercise import PlanExercise  # noqa: F401 — registers table with metadata
 from app.models.user import User  # noqa: F401 — registers table with metadata
+from app.models.exercise_set import ExerciseSet  # noqa: F401 — registers table with metadata
+from app.models.session_exercise import SessionExercise  # noqa: F401 — registers table with metadata
 from app.models.workout_plan import WorkoutPlan  # noqa: F401 — registers table with metadata
+from app.models.workout_session import WorkoutSession  # noqa: F401 — registers table with metadata
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
