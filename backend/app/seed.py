@@ -88,9 +88,7 @@ SEED_EXERCISES = [
 
 async def create_system_user(session: AsyncSession) -> User:
     """Create or return the system user with seeded muscle groups and exercises."""
-    result = await session.execute(
-        select(User).where(User.username == "system")
-    )
+    result = await session.execute(select(User).where(User.username == "system"))
     existing = result.scalar_one_or_none()
     if existing is not None:
         return existing
@@ -128,12 +126,18 @@ async def copy_defaults_to_user(
     session: AsyncSession, system_user_id: int, target_user_id: int
 ) -> None:
     """Copy system user's active muscle groups and exercises to a target user."""
-    source_groups = (await session.execute(
-        select(MuscleGroup).where(
-            MuscleGroup.user_id == system_user_id,
-            MuscleGroup.is_active == True,  # noqa: E712
+    source_groups = (
+        (
+            await session.execute(
+                select(MuscleGroup).where(
+                    MuscleGroup.user_id == system_user_id,
+                    MuscleGroup.is_active == True,  # noqa: E712
+                )
+            )
         )
-    )).scalars().all()
+        .scalars()
+        .all()
+    )
 
     group_id_map: dict[int, int] = {}
     for sg in source_groups:
@@ -146,12 +150,18 @@ async def copy_defaults_to_user(
         await session.flush()
         group_id_map[sg.id] = new_group.id
 
-    source_exercises = (await session.execute(
-        select(Exercise).where(
-            Exercise.user_id == system_user_id,
-            Exercise.is_active == True,  # noqa: E712
+    source_exercises = (
+        (
+            await session.execute(
+                select(Exercise).where(
+                    Exercise.user_id == system_user_id,
+                    Exercise.is_active == True,  # noqa: E712
+                )
+            )
         )
-    )).scalars().all()
+        .scalars()
+        .all()
+    )
 
     for se in source_exercises:
         new_exercise = Exercise(

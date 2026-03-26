@@ -1,4 +1,20 @@
+from datetime import date
+
+from app.models.exercise import Exercise, ExerciseBase, ExerciseType
+from app.models.exercise_set import ExerciseSet, ExerciseSetBase
 from app.models.muscle_group import MuscleGroup, MuscleGroupBase
+from app.models.plan_exercise import PlanExercise, PlanExerciseBase
+from app.models.session_exercise import (
+    ExerciseStatus,
+    SessionExercise,
+    SessionExerciseBase,
+)
+from app.models.workout_plan import WorkoutPlan, WorkoutPlanBase
+from app.models.workout_session import (
+    SessionStatus,
+    WorkoutSession,
+    WorkoutSessionBase,
+)
 
 
 class TestMuscleGroupModel:
@@ -25,10 +41,6 @@ class TestMuscleGroupModel:
         assert "user_id" not in data
         assert "is_active" not in data
         assert "created_at" not in data
-
-
-from app.models.exercise import Exercise, ExerciseBase, ExerciseType  # noqa: E402
-from app.models.muscle_group import MuscleGroup  # noqa: E402
 
 
 class TestExerciseModel:
@@ -69,10 +81,6 @@ class TestExerciseModel:
             "muscle_group_id": 1,
         }
         assert "user_id" not in data
-
-
-from app.models.plan_exercise import PlanExercise, PlanExerciseBase  # noqa: E402
-from app.models.workout_plan import WorkoutPlan, WorkoutPlanBase  # noqa: E402
 
 
 class TestWorkoutPlanModel:
@@ -121,13 +129,6 @@ class TestWorkoutPlanModel:
         data = base.model_dump()
         assert data == {"id": 1, "exercise_id": 5, "sort_order": 1}
         assert "plan_id" not in data
-
-
-from datetime import date  # noqa: E402
-
-from app.models.exercise_set import ExerciseSet, ExerciseSetBase  # noqa: E402
-from app.models.session_exercise import ExerciseStatus, SessionExercise, SessionExerciseBase  # noqa: E402
-from app.models.workout_session import SessionStatus, WorkoutSession, WorkoutSessionBase  # noqa: E402
 
 
 class TestWorkoutSessionModels:
@@ -253,7 +254,12 @@ class TestWorkoutSessionModels:
 
     async def test_exercise_set_base_excludes_session_exercise_id(self):
         base = ExerciseSetBase(
-            id=1, set_number=1, reps=8, weight=80.0, duration=None, is_completed=True
+            id=1,
+            set_number=1,
+            reps=8,
+            weight=80.0,
+            duration=None,
+            is_completed=True,
         )
         data = base.model_dump()
         assert "session_exercise_id" not in data

@@ -60,7 +60,9 @@ async def engine():
 
 @pytest_asyncio.fixture
 async def session(engine):
-    async_session = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+    async_session = async_sessionmaker(
+        engine, class_=AsyncSession, expire_on_commit=False
+    )
     async with async_session() as session:
         yield session
         await session.rollback()
@@ -122,7 +124,9 @@ async def admin_client(session, admin_token):
     app.dependency_overrides[get_session] = override_get_session
     transport = ASGITransport(app=app)
     headers = {"Authorization": f"Bearer {admin_token}"}
-    async with AsyncClient(transport=transport, base_url="http://test", headers=headers) as client:
+    async with AsyncClient(
+        transport=transport, base_url="http://test", headers=headers
+    ) as client:
         yield client
     app.dependency_overrides.clear()
 
@@ -135,6 +139,8 @@ async def user_client(session, user_token):
     app.dependency_overrides[get_session] = override_get_session
     transport = ASGITransport(app=app)
     headers = {"Authorization": f"Bearer {user_token}"}
-    async with AsyncClient(transport=transport, base_url="http://test", headers=headers) as client:
+    async with AsyncClient(
+        transport=transport, base_url="http://test", headers=headers
+    ) as client:
         yield client
     app.dependency_overrides.clear()

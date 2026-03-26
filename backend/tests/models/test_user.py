@@ -15,8 +15,13 @@ class TestUserModel:
         mapper = inspect(User)
         column_names = {col.key for col in mapper.columns}
         expected = {
-            "id", "username", "email", "password_hash",
-            "is_admin", "is_system", "created_at",
+            "id",
+            "username",
+            "email",
+            "password_hash",
+            "is_admin",
+            "is_system",
+            "created_at",
         }
         assert expected == column_names
 

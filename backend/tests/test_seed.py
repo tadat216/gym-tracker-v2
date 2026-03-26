@@ -30,14 +30,26 @@ class TestSeedData:
         assert system_user.is_system is True
         assert system_user.password_hash == ""
 
-        groups = (await session.execute(
-            select(MuscleGroup).where(MuscleGroup.user_id == system_user.id)
-        )).scalars().all()
+        groups = (
+            (
+                await session.execute(
+                    select(MuscleGroup).where(MuscleGroup.user_id == system_user.id)
+                )
+            )
+            .scalars()
+            .all()
+        )
         assert len(groups) == 11
 
-        exercises = (await session.execute(
-            select(Exercise).where(Exercise.user_id == system_user.id)
-        )).scalars().all()
+        exercises = (
+            (
+                await session.execute(
+                    select(Exercise).where(Exercise.user_id == system_user.id)
+                )
+            )
+            .scalars()
+            .all()
+        )
         assert len(exercises) == len(SEED_EXERCISES)
 
     async def test_create_system_user_idempotent(self, session):
@@ -60,14 +72,26 @@ class TestSeedData:
 
         await copy_defaults_to_user(session, system_user.id, new_user.id)
 
-        groups = (await session.execute(
-            select(MuscleGroup).where(MuscleGroup.user_id == new_user.id)
-        )).scalars().all()
+        groups = (
+            (
+                await session.execute(
+                    select(MuscleGroup).where(MuscleGroup.user_id == new_user.id)
+                )
+            )
+            .scalars()
+            .all()
+        )
         assert len(groups) == 11
 
-        exercises = (await session.execute(
-            select(Exercise).where(Exercise.user_id == new_user.id)
-        )).scalars().all()
+        exercises = (
+            (
+                await session.execute(
+                    select(Exercise).where(Exercise.user_id == new_user.id)
+                )
+            )
+            .scalars()
+            .all()
+        )
         assert len(exercises) == len(SEED_EXERCISES)
 
         # Verify exercises point to the new user's muscle groups, not the system user's

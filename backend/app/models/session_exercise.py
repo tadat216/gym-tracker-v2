@@ -3,7 +3,7 @@ import enum
 from sqlmodel import Field, SQLModel
 
 
-class ExerciseStatus(str, enum.Enum):
+class ExerciseStatus(enum.StrEnum):
     PENDING = "pending"
     COMPLETED = "completed"
     SKIPPED = "skipped"

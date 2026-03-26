@@ -8,7 +8,9 @@ from app.schemas.user import UserCreate, UserRead, UserUpdate
 
 class TestUserCreate:
     def test_valid(self):
-        user = UserCreate(username="alice", email="alice@example.com", password="pass123")
+        user = UserCreate(
+            username="alice", email="alice@example.com", password="pass123"
+        )
         assert user.username == "alice"
         assert user.email == "alice@example.com"
         assert user.password == "pass123"
@@ -34,7 +36,13 @@ class TestUserUpdate:
 class TestUserRead:
     def test_fields(self):
         now = datetime.now(UTC)
-        user = UserRead(id=1, username="alice", email="alice@example.com", is_admin=False, created_at=now)
+        user = UserRead(
+            id=1,
+            username="alice",
+            email="alice@example.com",
+            is_admin=False,
+            created_at=now,
+        )
         assert user.id == 1
         assert user.username == "alice"
         assert user.is_admin is False

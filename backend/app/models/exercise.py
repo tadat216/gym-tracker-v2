@@ -5,7 +5,7 @@ from sqlalchemy import DateTime
 from sqlmodel import Field, SQLModel
 
 
-class ExerciseType(str, enum.Enum):
+class ExerciseType(enum.StrEnum):
     WEIGHT = "weight"
     BODYWEIGHT = "bodyweight"
     DURATION = "duration"

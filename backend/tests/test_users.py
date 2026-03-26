@@ -21,7 +21,11 @@ class TestCreateUser:
     async def test_create_user(self, admin_client):
         response = await admin_client.post(
             "/api/v1/users",
-            json={"username": "newuser", "email": "new@test.com", "password": "newpass"},
+            json={
+                "username": "newuser",
+                "email": "new@test.com",
+                "password": "newpass",
+            },
         )
         assert response.status_code == 201
         data = response.json()
@@ -33,7 +37,11 @@ class TestCreateUser:
     async def test_create_user_duplicate_username(self, admin_client, regular_user):
         response = await admin_client.post(
             "/api/v1/users",
-            json={"username": "testuser", "email": "other@test.com", "password": "pass"},
+            json={
+                "username": "testuser",
+                "email": "other@test.com",
+                "password": "pass",
+            },
         )
         assert response.status_code == 409
 
@@ -65,14 +73,18 @@ class TestUpdateUser:
         assert response.status_code == 200
         assert response.json()["username"] == "updated"
 
-    async def test_update_user_duplicate_username(self, admin_client, admin_user, regular_user):
+    async def test_update_user_duplicate_username(
+        self, admin_client, admin_user, regular_user
+    ):
         response = await admin_client.patch(
             f"/api/v1/users/{regular_user.id}",
             json={"username": "testadmin"},
         )
         assert response.status_code == 409
 
-    async def test_update_user_duplicate_email(self, admin_client, admin_user, regular_user):
+    async def test_update_user_duplicate_email(
+        self, admin_client, admin_user, regular_user
+    ):
         response = await admin_client.patch(
             f"/api/v1/users/{regular_user.id}",
             json={"email": "admin@test.com"},

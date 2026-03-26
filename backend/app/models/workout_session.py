@@ -5,7 +5,7 @@ from sqlalchemy import DateTime
 from sqlmodel import Field, SQLModel
 
 
-class SessionStatus(str, enum.Enum):
+class SessionStatus(enum.StrEnum):
     IN_PROGRESS = "in_progress"
     COMPLETED = "completed"
 
