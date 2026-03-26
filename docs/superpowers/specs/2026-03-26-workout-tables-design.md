@@ -247,11 +247,14 @@ Admin can modify these defaults via a dedicated "Default Exercises" page in the 
 
 ### Muscle Groups
 - Chest (#EF4444)
-- Back (#3B82F6)
+- Lats (#3B82F6)
+- Upper Back (#0EA5E9)
 - Shoulders (#F59E0B)
 - Biceps (#8B5CF6)
 - Triceps (#EC4899)
-- Legs (#10B981)
+- Quads (#10B981)
+- Hamstrings (#14B8A6)
+- Calves (#059669)
 - Core (#6366F1)
 - Cardio (#F97316)
 
@@ -259,15 +262,21 @@ Admin can modify these defaults via a dedicated "Default Exercises" page in the 
 
 **Chest:** Bench Press (weight), Incline Dumbbell Press (weight), Push-ups (bodyweight), Cable Fly (weight)
 
-**Back:** Deadlift (weight), Pull-ups (bodyweight), Barbell Row (weight), Lat Pulldown (weight)
+**Lats:** Pull-ups (bodyweight), Lat Pulldown (weight), Seated Cable Row (weight), Dumbbell Row (weight)
 
-**Shoulders:** Overhead Press (weight), Lateral Raise (weight), Face Pull (weight)
+**Upper Back:** Barbell Row (weight), Face Pull (weight), Reverse Fly (weight), Shrugs (weight)
+
+**Shoulders:** Overhead Press (weight), Lateral Raise (weight), Front Raise (weight)
 
 **Biceps:** Barbell Curl (weight), Dumbbell Curl (weight), Hammer Curl (weight)
 
 **Triceps:** Tricep Pushdown (weight), Skull Crusher (weight), Dips (bodyweight)
 
-**Legs:** Squat (weight), Leg Press (weight), Romanian Deadlift (weight), Leg Curl (weight), Calf Raise (weight)
+**Quads:** Squat (weight), Leg Press (weight), Leg Extension (weight), Bulgarian Split Squat (weight)
+
+**Hamstrings:** Romanian Deadlift (weight), Leg Curl (weight), Good Morning (weight)
+
+**Calves:** Standing Calf Raise (weight), Seated Calf Raise (weight)
 
 **Core:** Plank (duration), Hanging Leg Raise (bodyweight), Ab Wheel Rollout (bodyweight)
 
