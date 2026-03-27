@@ -7,8 +7,9 @@ from sqlmodel import select
 
 from app.models.plan_exercise import PlanExercise
 from app.models.workout_plan import WorkoutPlan
-from app.schemas.workout_plan import WorkoutPlanCreate, WorkoutPlanUpdate
-from app.services.exceptions import DuplicateNameError, NotFoundError
+from app.models.exercise import Exercise
+from app.schemas.workout_plan import PlanExerciseCreate, WorkoutPlanCreate, WorkoutPlanUpdate
+from app.services.exceptions import DuplicateNameError, InvalidReferenceError, NotFoundError
 
 
 class WorkoutPlanService:
@@ -93,6 +94,47 @@ class WorkoutPlanService:
         plan.is_active = False
         await self.session.flush()
         return plan
+
+    async def add_exercise(
+        self, plan_id: int, data: PlanExerciseCreate
+    ) -> PlanExercise:
+        plan, _ = await self.get(plan_id)
+        await self._validate_exercise(data.exercise_id)
+        pe = PlanExercise(
+            plan_id=plan.id,
+            exercise_id=data.exercise_id,
+            sort_order=data.sort_order,
+        )
+        self.session.add(pe)
+        await self.session.flush()
+        return pe
+
+    async def remove_exercise(
+        self, plan_id: int, plan_exercise_id: int
+    ) -> None:
+        await self.get(plan_id)
+        result = await self.session.execute(
+            select(PlanExercise).where(
+                PlanExercise.id == plan_exercise_id,
+                PlanExercise.plan_id == plan_id,
+            )
+        )
+        pe = result.scalar_one_or_none()
+        if pe is None:
+            raise NotFoundError("Plan exercise")
+        await self.session.delete(pe)
+        await self.session.flush()
+
+    async def _validate_exercise(self, exercise_id: int) -> None:
+        result = await self.session.execute(
+            select(Exercise).where(
+                Exercise.id == exercise_id,
+                Exercise.user_id == self.user_id,
+                Exercise.is_active == True,  # noqa: E712
+            )
+        )
+        if result.scalar_one_or_none() is None:
+            raise InvalidReferenceError("Plan exercise", "exercise_id")
 
     async def _check_duplicate_name(
         self, name: str, *, exclude_id: int | None = None

@@ -6,12 +6,17 @@ from app.database import get_session
 from app.models.user import User
 from app.schemas.auth import MessageResponse
 from app.schemas.workout_plan import (
+    PlanExerciseCreate,
     PlanExerciseRead,
     WorkoutPlanCreate,
     WorkoutPlanRead,
     WorkoutPlanUpdate,
 )
-from app.services.exceptions import DuplicateNameError, NotFoundError
+from app.services.exceptions import (
+    DuplicateNameError,
+    InvalidReferenceError,
+    NotFoundError,
+)
 from app.services.workout_plan import WorkoutPlanService
 
 router = APIRouter(prefix="/api/v1/workout-plans", tags=["workout-plans"])
@@ -115,3 +120,44 @@ async def delete_workout_plan(
     except NotFoundError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     return MessageResponse(message=f"Workout plan '{plan.name}' deactivated")
+
+
+@router.post(
+    "/{plan_id}/exercises",
+    response_model=PlanExerciseRead,
+    status_code=201,
+    operation_id="addPlanExercise",
+)
+async def add_plan_exercise(
+    plan_id: int,
+    body: PlanExerciseCreate,
+    session: AsyncSession = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+) -> PlanExerciseRead:
+    svc = WorkoutPlanService(session, current_user.id)
+    try:
+        pe = await svc.add_exercise(plan_id, body)
+    except NotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except InvalidReferenceError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return PlanExerciseRead.model_validate(pe)
+
+
+@router.delete(
+    "/{plan_id}/exercises/{plan_exercise_id}",
+    response_model=MessageResponse,
+    operation_id="removePlanExercise",
+)
+async def remove_plan_exercise(
+    plan_id: int,
+    plan_exercise_id: int,
+    session: AsyncSession = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+) -> MessageResponse:
+    svc = WorkoutPlanService(session, current_user.id)
+    try:
+        await svc.remove_exercise(plan_id, plan_exercise_id)
+    except NotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    return MessageResponse(message="Exercise removed from plan")
