@@ -32,7 +32,10 @@ export function useExerciseForm() {
   }, []);
 
   const setField = useCallback((field: string, value: string) => {
-    setFormValues((prev) => ({ ...prev, [field]: value }));
+    setFormValues((prev) => ({
+      ...prev,
+      [field]: field === "muscleGroupId" ? Number(value) : value,
+    }));
   }, []);
 
   return { mode, formValues, editingExercise, openCreate, openEdit, close, setField };
