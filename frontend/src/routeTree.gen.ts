@@ -10,12 +10,18 @@
 
 import { Route as rootRouteImport } from "./routes/__root"
 import { Route as LoginRouteImport } from "./routes/login"
+import { Route as ExercisesRouteImport } from "./routes/exercises"
 import { Route as IndexRouteImport } from "./routes/index"
 import { Route as AdminUsersRouteImport } from "./routes/admin/users"
 
 const LoginRoute = LoginRouteImport.update({
   id: "/login",
   path: "/login",
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ExercisesRoute = ExercisesRouteImport.update({
+  id: "/exercises",
+  path: "/exercises",
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -31,30 +37,34 @@ const AdminUsersRoute = AdminUsersRouteImport.update({
 
 export interface FileRoutesByFullPath {
   "/": typeof IndexRoute
+  "/exercises": typeof ExercisesRoute
   "/login": typeof LoginRoute
   "/admin/users": typeof AdminUsersRoute
 }
 export interface FileRoutesByTo {
   "/": typeof IndexRoute
+  "/exercises": typeof ExercisesRoute
   "/login": typeof LoginRoute
   "/admin/users": typeof AdminUsersRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   "/": typeof IndexRoute
+  "/exercises": typeof ExercisesRoute
   "/login": typeof LoginRoute
   "/admin/users": typeof AdminUsersRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: "/" | "/login" | "/admin/users"
+  fullPaths: "/" | "/exercises" | "/login" | "/admin/users"
   fileRoutesByTo: FileRoutesByTo
-  to: "/" | "/login" | "/admin/users"
-  id: "__root__" | "/" | "/login" | "/admin/users"
+  to: "/" | "/exercises" | "/login" | "/admin/users"
+  id: "__root__" | "/" | "/exercises" | "/login" | "/admin/users"
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  ExercisesRoute: typeof ExercisesRoute
   LoginRoute: typeof LoginRoute
   AdminUsersRoute: typeof AdminUsersRoute
 }
@@ -66,6 +76,13 @@ declare module "@tanstack/react-router" {
       path: "/login"
       fullPath: "/login"
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    "/exercises": {
+      id: "/exercises"
+      path: "/exercises"
+      fullPath: "/exercises"
+      preLoaderRoute: typeof ExercisesRouteImport
       parentRoute: typeof rootRouteImport
     }
     "/": {
@@ -87,6 +104,7 @@ declare module "@tanstack/react-router" {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  ExercisesRoute: ExercisesRoute,
   LoginRoute: LoginRoute,
   AdminUsersRoute: AdminUsersRoute,
 }
