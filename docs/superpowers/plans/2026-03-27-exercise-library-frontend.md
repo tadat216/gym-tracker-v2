@@ -17,6 +17,8 @@
 ### New UI Components
 | File | Responsibility |
 |------|---------------|
+| `frontend/src/ui/field-label.tsx` | Reusable form field label (extracted from `FormField` pattern) |
+| `frontend/src/ui/row-action-menu.tsx` | Reusable ⋯ dropdown with Edit/Delete actions |
 | `frontend/src/ui/segmented-toggle.tsx` | Reusable N-option toggle, generic `<T extends string>` |
 | `frontend/src/ui/color-picker.tsx` | Full HSB color picker with hue slider and live preview |
 
@@ -118,7 +120,257 @@ git commit -m "chore: regenerate API client with muscle group and exercise endpo
 
 ---
 
-## Task 2: SegmentedToggle UI Component
+## Task 2: FieldLabel + RowActionMenu Reusable UI Components
+
+**Files:**
+- Create: `frontend/src/ui/field-label.tsx`
+- Create: `frontend/src/ui/row-action-menu.tsx`
+- Modify: `frontend/src/ui/form-field.tsx` — use `FieldLabel` internally
+- Modify: `frontend/src/components/users/views/user-list/user-row.tsx` — add ⋯ action menu
+
+**Why:** The form label pattern (`text-[11px] font-bold uppercase tracking-[1px]`) is hardcoded inside `FormField` and would be duplicated in every form sheet for non-Input fields (SegmentedToggle, ColorPicker, select). The ⋯ Edit/Delete dropdown is identical across `exercise-row`, `muscle-group-row`, and will now also be used in `user-row`. Extract both as shared UI components.
+
+- [ ] **Step 1: Create FieldLabel**
+
+```tsx
+// frontend/src/ui/field-label.tsx
+import { cn } from "@/lib/utils";
+
+interface FieldLabelProps {
+  htmlFor?: string;
+  children: React.ReactNode;
+  className?: string;
+}
+
+function FieldLabel({ htmlFor, children, className }: FieldLabelProps) {
+  return (
+    <label
+      htmlFor={htmlFor}
+      className={cn(
+        "mb-1.5 block text-[11px] font-bold uppercase tracking-[1px] text-muted-foreground",
+        className,
+      )}
+    >
+      {children}
+    </label>
+  );
+}
+
+export { FieldLabel };
+export type { FieldLabelProps };
+```
+
+- [ ] **Step 2: Update FormField to use FieldLabel**
+
+Replace the raw `<label>` in `frontend/src/ui/form-field.tsx`:
+
+```tsx
+// frontend/src/ui/form-field.tsx
+import { Input } from "@/ui/input";
+import { FieldLabel } from "@/ui/field-label";
+import { cn } from "@/lib/utils";
+
+interface FormFieldProps {
+  id: string;
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  type?: string;
+  placeholder?: string;
+  error?: string;
+  className?: string;
+}
+
+function FormField({
+  id, label, value, onChange, type = "text", placeholder, error, className,
+}: FormFieldProps) {
+  return (
+    <div className={className}>
+      <FieldLabel htmlFor={id}>{label}</FieldLabel>
+      <Input
+        id={id} type={type} value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder} aria-invalid={!!error}
+        className={cn("h-auto rounded-[10px] bg-white/3 px-3.5 py-3 text-[15px] font-medium", error && "border-destructive")}
+      />
+      {error ? <p role="alert" className="mt-1 text-xs font-medium text-destructive">{error}</p> : null}
+    </div>
+  );
+}
+
+export { FormField };
+export type { FormFieldProps };
+```
+
+- [ ] **Step 3: Create RowActionMenu**
+
+```tsx
+// frontend/src/ui/row-action-menu.tsx
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from "@/ui/dropdown-menu";
+import { Button } from "@/ui/button";
+import { Ellipsis, Pencil, Trash2 } from "lucide-react";
+
+interface RowActionMenuProps {
+  onEdit: () => void;
+  onDelete: () => void;
+}
+
+function RowActionMenu({ onEdit, onDelete }: RowActionMenuProps) {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        render={<Button variant="ghost" size="icon-xs" aria-label="Actions" />}
+      >
+        <Ellipsis className="size-4" />
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuItem onClick={onEdit}>
+          <Pencil className="mr-2 size-3.5" />
+          Edit
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={onDelete} className="text-destructive">
+          <Trash2 className="mr-2 size-3.5" />
+          Delete
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
+export { RowActionMenu };
+export type { RowActionMenuProps };
+```
+
+- [ ] **Step 4: Update UserRow to use RowActionMenu**
+
+Replace the `ChevronRight` in `frontend/src/components/users/views/user-list/user-row.tsx` with the new ⋯ menu. This changes user rows from "click whole row → edit" to "click row to select, ⋯ for actions" — matching the exercise/muscle-group pattern.
+
+```tsx
+// frontend/src/components/users/views/user-list/user-row.tsx
+import { Badge } from "@/ui/badge";
+import { RowActionMenu } from "@/ui/row-action-menu";
+import type { UserRowProps } from "../../types";
+
+const UserRow = ({ user, onEdit, onDelete }: UserRowProps) => {
+  return (
+    <div className="card-row">
+      <div className="avatar-initial">
+        {user.username.charAt(0).toUpperCase()}
+      </div>
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-2">
+          <span className="text-[15px] font-bold text-foreground">{user.username}</span>
+          {user.is_admin ? <Badge variant="secondary" className="border border-primary/15 text-[10px] font-bold uppercase tracking-wide text-primary">Admin</Badge> : null}
+        </div>
+        <p className="truncate text-[13px] text-muted-foreground">{user.email}</p>
+      </div>
+      <RowActionMenu onEdit={onEdit} onDelete={onDelete} />
+    </div>
+  );
+};
+
+UserRow.displayName = "UserRow";
+export default UserRow;
+```
+
+**Note:** This changes `UserRowProps` — update `frontend/src/components/users/types.ts`:
+
+```ts
+export interface UserRowProps {
+  user: UserRead;
+  onEdit: () => void;
+  onDelete: () => void;
+}
+```
+
+And update `UserList` to pass the new props, and `UsersContainer` to wire the delete flow from the row instead of only from the edit sheet. The `UserList` maps `onUserClick` → `onEdit` per row, and adds a new `onDelete` callback:
+
+In `frontend/src/components/users/types.ts`, update `UserListProps`:
+
+```ts
+export interface UserListProps {
+  users: UserRead[];
+  onEditUser: (user: UserRead) => void;
+  onDeleteUser: (user: UserRead) => void;
+}
+```
+
+In `frontend/src/components/users/views/user-list/user-list.tsx`:
+
+```tsx
+import UserRow from "./user-row";
+import type { UserListProps } from "../../types";
+
+const UserList = ({ users, onEditUser, onDeleteUser }: UserListProps) => {
+  return (
+    <div className="space-y-2 px-4 pt-2 pb-24">
+      {users.map((user) => (
+        <UserRow key={user.id} user={user} onEdit={() => onEditUser(user)} onDelete={() => onDeleteUser(user)} />
+      ))}
+    </div>
+  );
+};
+
+UserList.displayName = "UserList";
+export default UserList;
+```
+
+In `frontend/src/components/users/views/users-page.tsx`, update the `UserList` usage:
+
+Change `onUserClick={onUserClick}` to `onEditUser={onUserClick} onDeleteUser={onDeleteUser}` and add `onDeleteUser` to `UsersPageProps`.
+
+In `frontend/src/components/users/types.ts`, add to `UsersPageProps`:
+
+```ts
+onDeleteUser: (user: UserRead) => void;
+```
+
+In `frontend/src/components/users/container.tsx`, add the handler:
+
+```ts
+const handleDeleteUser = (user: UserRead) => {
+  form.openEdit(user);
+  setDeleteConfirmOpen(true);
+};
+```
+
+And pass `onDeleteUser={handleDeleteUser}` to `UsersPage`.
+
+- [ ] **Step 5: Verify TypeScript compiles**
+
+```bash
+cd frontend && npx tsc --noEmit
+```
+
+Expected: No errors.
+
+- [ ] **Step 6: Verify lint passes**
+
+```bash
+cd frontend && npx eslint .
+```
+
+Expected: No errors.
+
+- [ ] **Step 7: Commit**
+
+```bash
+git add frontend/src/ui/field-label.tsx frontend/src/ui/row-action-menu.tsx frontend/src/ui/form-field.tsx frontend/src/components/users/
+git commit -m "feat: extract FieldLabel and RowActionMenu reusable UI components
+
+- FieldLabel: shared form label pattern, used by FormField internally
+- RowActionMenu: ⋯ dropdown with Edit/Delete, used by all row components
+- Updated UserRow to use RowActionMenu instead of ChevronRight"
+```
+
+---
+
+## Task 3: SegmentedToggle UI component
 
 **Files:**
 - Create: `frontend/src/ui/segmented-toggle.tsx`
@@ -189,7 +441,7 @@ git commit -m "feat: add SegmentedToggle UI component"
 
 ---
 
-## Task 3: ColorPicker UI Component
+## Task 4: ColorPicker UI Component
 
 **Files:**
 - Create: `frontend/src/ui/color-picker.tsx`
@@ -386,7 +638,7 @@ git commit -m "feat: add ColorPicker UI component with HSB picker and live previ
 
 ---
 
-## Task 4: Muscle Groups — Types + Hooks
+## Task 5: Muscle Groups — Types + Hooks
 
 **Files:**
 - Create: `frontend/src/components/exercise-library/muscle-groups/types.ts`
@@ -596,7 +848,7 @@ git commit -m "feat: add muscle group types and hooks"
 
 ---
 
-## Task 5: Muscle Groups — Views
+## Task 6: Muscle Groups — Views
 
 **Files:**
 - Create: `frontend/src/components/exercise-library/muscle-groups/views/muscle-group-chips.tsx`
@@ -650,9 +902,7 @@ export default MuscleGroupChips;
 
 ```tsx
 // frontend/src/components/exercise-library/muscle-groups/views/muscle-group-list/muscle-group-row.tsx
-import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/ui/dropdown-menu";
-import { Button } from "@/ui/button";
-import { Ellipsis, Pencil, Trash2 } from "lucide-react";
+import { RowActionMenu } from "@/ui/row-action-menu";
 import type { MuscleGroupRowProps } from "../../types";
 
 const MuscleGroupRow = ({ group, onEdit, onDelete }: MuscleGroupRowProps) => {
@@ -660,15 +910,7 @@ const MuscleGroupRow = ({ group, onEdit, onDelete }: MuscleGroupRowProps) => {
     <div className="card-row">
       <div className="size-3.5 shrink-0 rounded" style={{ background: group.color }} />
       <span className="flex-1 text-[15px] font-bold text-foreground">{group.name}</span>
-      <DropdownMenu>
-        <DropdownMenuTrigger render={<Button variant="ghost" size="icon-xs" aria-label="Actions" />}>
-          <Ellipsis className="size-4" />
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
-          <DropdownMenuItem onClick={onEdit}><Pencil className="mr-2 size-3.5" />Edit</DropdownMenuItem>
-          <DropdownMenuItem onClick={onDelete} className="text-destructive"><Trash2 className="mr-2 size-3.5" />Delete</DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+      <RowActionMenu onEdit={onEdit} onDelete={onDelete} />
     </div>
   );
 };
@@ -740,11 +982,9 @@ export default MuscleGroupSheet;
 import { Button } from "@/ui/button";
 import { FormSheet } from "@/ui/form-sheet";
 import { FormField } from "@/ui/form-field";
+import { FieldLabel } from "@/ui/field-label";
 import { ColorPicker } from "@/ui/color-picker";
 import type { MuscleGroupFormSheetProps } from "../types";
-
-// Reuse FormField's label classes for non-Input fields (Color)
-const fieldLabelClass = "mb-1.5 block text-[11px] font-bold uppercase tracking-[1px] text-muted-foreground";
 
 const MuscleGroupFormSheet = ({
   mode, open, values, isSubmitting, error,
@@ -764,7 +1004,7 @@ const MuscleGroupFormSheet = ({
           error={error ?? undefined}
         />
         <div>
-          <label className={fieldLabelClass}>Color</label>
+          <FieldLabel>Color</FieldLabel>
           <ColorPicker value={values.color} onChange={(v) => onChange("color", v)} previewLabel={values.name || "Sample"} />
         </div>
       </div>
@@ -814,7 +1054,7 @@ git commit -m "feat: add muscle group views (chips, manage sheet, form sheet)"
 
 ---
 
-## Task 6: Exercises — Types + Hooks
+## Task 7: Exercises — Types + Hooks
 
 **Files:**
 - Create: `frontend/src/components/exercise-library/exercises/types.ts`
@@ -1019,7 +1259,7 @@ git commit -m "feat: add exercise types and hooks"
 
 ---
 
-## Task 7: Exercises — Views
+## Task 8: Exercises — Views
 
 **Files:**
 - Create: `frontend/src/components/exercise-library/exercises/views/exercise-list/exercise-row.tsx`
@@ -1033,10 +1273,8 @@ git commit -m "feat: add exercise types and hooks"
 
 ```tsx
 // frontend/src/components/exercise-library/exercises/views/exercise-list/exercise-row.tsx
-import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/ui/dropdown-menu";
 import { Badge } from "@/ui/badge";
-import { Button } from "@/ui/button";
-import { Ellipsis, Pencil, Trash2 } from "lucide-react";
+import { RowActionMenu } from "@/ui/row-action-menu";
 import type { ExerciseRowProps } from "../../types";
 
 const ExerciseRow = ({ exercise, color, onEdit, onDelete }: ExerciseRowProps) => {
@@ -1046,15 +1284,7 @@ const ExerciseRow = ({ exercise, color, onEdit, onDelete }: ExerciseRowProps) =>
         <span className="text-[15px] font-bold text-foreground">{exercise.name}</span>
       </div>
       <Badge variant="secondary">{exercise.type}</Badge>
-      <DropdownMenu>
-        <DropdownMenuTrigger render={<Button variant="ghost" size="icon-xs" aria-label="Actions" />}>
-          <Ellipsis className="size-4" />
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
-          <DropdownMenuItem onClick={onEdit}><Pencil className="mr-2 size-3.5" />Edit</DropdownMenuItem>
-          <DropdownMenuItem onClick={onDelete} className="text-destructive"><Trash2 className="mr-2 size-3.5" />Delete</DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+      <RowActionMenu onEdit={onEdit} onDelete={onDelete} />
     </div>
   );
 };
@@ -1126,12 +1356,9 @@ Check the generated `ExerciseType` enum values from `frontend/src/api/model/`. B
 import { Button } from "@/ui/button";
 import { FormSheet } from "@/ui/form-sheet";
 import { FormField } from "@/ui/form-field";
-import { Input } from "@/ui/input";
+import { FieldLabel } from "@/ui/field-label";
 import { SegmentedToggle } from "@/ui/segmented-toggle";
 import type { ExerciseFormSheetProps } from "../types";
-
-// Reuse FormField's label classes for non-Input fields (Type, Muscle Group)
-const fieldLabelClass = "mb-1.5 block text-[11px] font-bold uppercase tracking-[1px] text-muted-foreground";
 
 const TYPE_OPTIONS = [
   { value: "weight" as const, label: "Weight" },
@@ -1157,11 +1384,11 @@ const ExerciseFormSheet = ({
           error={error ?? undefined}
         />
         <div>
-          <label className={fieldLabelClass}>Type</label>
+          <FieldLabel>Type</FieldLabel>
           <SegmentedToggle options={TYPE_OPTIONS} value={values.type} onChange={(v) => onChange("type", v)} />
         </div>
         <div>
-          <label htmlFor="ex-muscle-group" className={fieldLabelClass}>Muscle Group</label>
+          <FieldLabel htmlFor="ex-muscle-group">Muscle Group</FieldLabel>
           <select
             id="ex-muscle-group"
             value={values.muscleGroupId ?? ""}
@@ -1219,7 +1446,7 @@ git commit -m "feat: add exercise views (list, row, skeleton, form sheet)"
 
 ---
 
-## Task 8: Page Container + Layout View + Route
+## Task 9: Page Container + Layout View + Route
 
 **Files:**
 - Create: `frontend/src/components/exercise-library/types.ts`
@@ -1625,7 +1852,7 @@ git commit -m "feat: add Exercise Library page with container, views, and routin
 
 ---
 
-## Task 9: Manual Smoke Test
+## Task 10: Manual Smoke Test
 
 **No files to create.** This task verifies the full flow works end-to-end in the browser.
 
