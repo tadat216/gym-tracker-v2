@@ -15,8 +15,8 @@ from app.schemas.workout_plan import (
 )
 from app.services.exceptions import (
     DuplicateNameError,
-    InvalidReorderError,
     InvalidReferenceError,
+    InvalidReorderError,
     NotFoundError,
 )
 from app.services.workout_plan import WorkoutPlanService
@@ -35,9 +35,7 @@ def _to_plan_read(plan, exercises) -> WorkoutPlanRead:
     )
 
 
-@router.get(
-    "", response_model=list[WorkoutPlanRead], operation_id="listWorkoutPlans"
-)
+@router.get("", response_model=list[WorkoutPlanRead], operation_id="listWorkoutPlans")
 async def list_workout_plans(
     session: AsyncSession = Depends(get_session),
     current_user: User = Depends(get_current_user),

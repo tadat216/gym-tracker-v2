@@ -5,11 +5,21 @@ from datetime import UTC, datetime
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
 
+from app.models.exercise import Exercise
 from app.models.plan_exercise import PlanExercise
 from app.models.workout_plan import WorkoutPlan
-from app.models.exercise import Exercise
-from app.schemas.workout_plan import PlanExerciseCreate, PlanExerciseReorder, WorkoutPlanCreate, WorkoutPlanUpdate
-from app.services.exceptions import DuplicateNameError, InvalidReorderError, InvalidReferenceError, NotFoundError
+from app.schemas.workout_plan import (
+    PlanExerciseCreate,
+    PlanExerciseReorder,
+    WorkoutPlanCreate,
+    WorkoutPlanUpdate,
+)
+from app.services.exceptions import (
+    DuplicateNameError,
+    InvalidReferenceError,
+    InvalidReorderError,
+    NotFoundError,
+)
 
 
 class WorkoutPlanService:
@@ -74,15 +84,11 @@ class WorkoutPlanService:
         await self.session.flush()
         return plan
 
-    async def update(
-        self, plan_id: int, data: WorkoutPlanUpdate
-    ) -> WorkoutPlan:
+    async def update(self, plan_id: int, data: WorkoutPlanUpdate) -> WorkoutPlan:
         plan, _ = await self.get(plan_id)
         update_data = data.model_dump(exclude_unset=True)
         if "name" in update_data:
-            await self._check_duplicate_name(
-                update_data["name"], exclude_id=plan_id
-            )
+            await self._check_duplicate_name(update_data["name"], exclude_id=plan_id)
         for key, value in update_data.items():
             setattr(plan, key, value)
         plan.updated_at = datetime.now(UTC)
@@ -109,9 +115,7 @@ class WorkoutPlanService:
         await self.session.flush()
         return pe
 
-    async def remove_exercise(
-        self, plan_id: int, plan_exercise_id: int
-    ) -> None:
+    async def remove_exercise(self, plan_id: int, plan_exercise_id: int) -> None:
         await self.get(plan_id)
         result = await self.session.execute(
             select(PlanExercise).where(
@@ -125,9 +129,7 @@ class WorkoutPlanService:
         await self.session.delete(pe)
         await self.session.flush()
 
-    async def reorder_exercises(
-        self, plan_id: int, data: PlanExerciseReorder
-    ) -> None:
+    async def reorder_exercises(self, plan_id: int, data: PlanExerciseReorder) -> None:
         _, exercises = await self.get(plan_id)
         current_ids = {e.id for e in exercises}
         new_ids = set(data.plan_exercise_ids)
