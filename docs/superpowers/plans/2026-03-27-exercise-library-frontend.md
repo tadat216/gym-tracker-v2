@@ -540,6 +540,10 @@ function useDrag(onMove: (x: number, y: number) => void) {
 function ColorPicker({ value, onChange, previewLabel, className }: ColorPickerProps) {
   const [hsb, setHsb] = useState<[number, number, number]>(() => hexToHsb(value));
 
+  // Use ref so drag callbacks always read latest hsb without recreating (rerender-dependencies)
+  const hsbRef = useRef(hsb);
+  hsbRef.current = hsb;
+
   // Sync external value changes
   useEffect(() => {
     const newHsb = hexToHsb(value);
@@ -554,12 +558,13 @@ function ColorPicker({ value, onChange, previewLabel, className }: ColorPickerPr
     [onChange],
   );
 
+  // Stable callbacks — read hsbRef.current instead of hsb to avoid recreating on every drag
   const sbArea = useDrag(
-    useCallback((x: number, y: number) => updateColor(hsb[0], x, 1 - y), [hsb, updateColor]),
+    useCallback((x: number, y: number) => updateColor(hsbRef.current[0], x, 1 - y), [updateColor]),
   );
 
   const hueSlider = useDrag(
-    useCallback((x: number) => updateColor(x * 360, hsb[1], hsb[2]), [hsb, updateColor]),
+    useCallback((x: number) => updateColor(x * 360, hsbRef.current[1], hsbRef.current[2]), [updateColor]),
   );
 
   const hex = hsbToHex(hsb[0], hsb[1], hsb[2]);
@@ -1652,11 +1657,13 @@ const ExerciseLibraryContainer = () => {
   const [deletingExercise, setDeletingExercise] = useState<ExerciseRead | null>(null);
 
   // Auto-select first muscle group when data loads
+  // Use primitive deps to avoid re-running on every query refetch (rerender-dependencies)
+  const firstGroupId = mgData.muscleGroups[0]?.id ?? null;
   useEffect(() => {
-    if (selectedMuscleGroupId === null && mgData.muscleGroups.length > 0) {
-      setSelectedMuscleGroupId(mgData.muscleGroups[0].id);
+    if (selectedMuscleGroupId === null && firstGroupId !== null) {
+      setSelectedMuscleGroupId(firstGroupId);
     }
-  }, [selectedMuscleGroupId, mgData.muscleGroups]);
+  }, [selectedMuscleGroupId, firstGroupId]);
 
   // --- Muscle group handlers ---
   const handleMgAdd = () => { setMgSubmitError(null); mgForm.openCreate(); };
