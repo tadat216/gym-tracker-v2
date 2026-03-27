@@ -57,7 +57,7 @@
 - Create: `frontend/src/components/workout-plans/exercise-picker/types.ts`
 - Create: `frontend/src/components/workout-plans/exercise-picker/index.ts`
 
-- [ ] **Step 1: Create types file**
+- [x] **Step 1: Create types file**
 
 ```ts
 // frontend/src/components/workout-plans/types.ts
@@ -123,7 +123,7 @@ export interface PlanDetailContainerProps {
 }
 ```
 
-- [ ] **Step 2: Create exercise-picker types**
+- [x] **Step 2: Create exercise-picker types**
 
 ```ts
 // frontend/src/components/workout-plans/exercise-picker/types.ts
@@ -156,7 +156,7 @@ export interface ExercisePickerItemProps {
 }
 ```
 
-- [ ] **Step 3: Create barrel exports**
+- [x] **Step 3: Create barrel exports**
 
 ```ts
 // frontend/src/components/workout-plans/index.ts
@@ -187,7 +187,7 @@ export { useExercisePicker } from "./hooks/use-exercise-picker";
 export { default as ExercisePickerSheet } from "./views/exercise-picker-sheet";
 ```
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add frontend/src/components/workout-plans/
@@ -202,7 +202,7 @@ git commit -m "feat(plans): add types and barrel exports for workout plans featu
 - Create: `frontend/src/components/workout-plans/hooks/use-plan-form.ts`
 - Create: `frontend/tests/unit/components/workout-plans/hooks/use-plan-form.test.tsx`
 
-- [ ] **Step 1: Write failing tests**
+- [x] **Step 1: Write failing tests**
 
 ```tsx
 // frontend/tests/unit/components/workout-plans/hooks/use-plan-form.test.tsx
@@ -263,12 +263,12 @@ describe("usePlanForm", () => {
 });
 ```
 
-- [ ] **Step 2: Run tests to verify they fail**
+- [x] **Step 2: Run tests to verify they fail**
 
 Run: `cd frontend && npx vitest run tests/unit/components/workout-plans/hooks/use-plan-form.test.tsx`
 Expected: FAIL — module not found.
 
-- [ ] **Step 3: Implement the hook**
+- [x] **Step 3: Implement the hook**
 
 ```ts
 // frontend/src/components/workout-plans/hooks/use-plan-form.ts
@@ -314,7 +314,7 @@ export function usePlanForm() {
 Run: `cd frontend && npx vitest run tests/unit/components/workout-plans/hooks/use-plan-form.test.tsx`
 Expected: 5 PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add frontend/src/components/workout-plans/hooks/use-plan-form.ts frontend/tests/unit/components/workout-plans/hooks/use-plan-form.test.tsx
