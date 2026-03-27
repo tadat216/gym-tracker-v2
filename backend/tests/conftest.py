@@ -37,7 +37,7 @@ from app.auth.password import hash_password  # noqa: E402
 from app.config import settings  # noqa: E402
 from app.database import get_session  # noqa: E402
 from app.main import app  # noqa: E402
-from app.models.exercise import Exercise  # noqa: E402, F401
+from app.models.exercise import Exercise, ExerciseType  # noqa: E402, F401
 from app.models.exercise_set import ExerciseSet  # noqa: E402, F401
 from app.models.muscle_group import MuscleGroup  # noqa: E402, F401
 from app.models.plan_exercise import PlanExercise  # noqa: E402, F401
@@ -144,3 +144,37 @@ async def user_client(session, user_token):
     ) as client:
         yield client
     app.dependency_overrides.clear()
+
+
+@pytest_asyncio.fixture
+async def system_user(session):
+    user = User(
+        username="system",
+        email="system@system",
+        password_hash="",
+        is_system=True,
+    )
+    session.add(user)
+    await session.flush()
+    return user
+
+
+@pytest_asyncio.fixture
+async def muscle_group(session, regular_user):
+    mg = MuscleGroup(name="Chest", color="#EF4444", user_id=regular_user.id)
+    session.add(mg)
+    await session.flush()
+    return mg
+
+
+@pytest_asyncio.fixture
+async def exercise(session, regular_user, muscle_group):
+    ex = Exercise(
+        name="Bench Press",
+        type=ExerciseType.WEIGHT,
+        muscle_group_id=muscle_group.id,
+        user_id=regular_user.id,
+    )
+    session.add(ex)
+    await session.flush()
+    return ex
