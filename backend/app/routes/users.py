@@ -67,7 +67,11 @@ async def create_user(
         if system_user:
             await copy_defaults_to_user(session, system_user.id, user.id)
     except Exception:
-        logger.warning("Failed to copy default exercises to user %s", user.id, exc_info=True)
+        logger.warning(
+            "Failed to copy default exercises to user %s",
+            user.id,
+            exc_info=True,
+        )
 
     return UserRead.model_validate(user)
 
