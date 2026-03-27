@@ -1322,7 +1322,7 @@ const ExerciseLibraryPage = (props: ExerciseLibraryPageProps) => {
             muscleGroups={props.muscleGroups} selectedId={props.selectedMuscleGroupId}
             onSelect={props.onMuscleGroupSelect} onManageClick={props.onManageGroupsClick}
           />
-          <div className="px-6 pb-2 pt-1">
+          <div className="px-6 pb-4 pt-2">
             <p className="text-[13px] font-medium text-muted-foreground">
               {props.exercisesLoading ? "Loading..." : `${exerciseCount} ${exerciseCount === 1 ? "exercise" : "exercises"}`}
             </p>
