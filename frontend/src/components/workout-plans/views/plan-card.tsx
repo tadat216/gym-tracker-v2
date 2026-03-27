@@ -21,7 +21,10 @@ const PlanCard = ({ plan, onEdit, onDelete, onClick }: PlanCardProps) => {
         >
           {plan.name}
         </button>
-        <div className="flex items-center gap-2">
+        <div
+          className="flex items-center gap-2"
+          onClick={(e) => e.stopPropagation()}
+        >
           <span className="text-xs font-medium text-muted-foreground">
             {count} exercise{count !== 1 ? "s" : ""}
           </span>

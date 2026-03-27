@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { WorkoutPlanRead } from "@/api/model";
@@ -23,6 +23,8 @@ describe("PlanCard", () => {
   const onEdit = vi.fn();
   const onDelete = vi.fn();
   const onClick = vi.fn();
+
+  beforeEach(() => { vi.clearAllMocks(); });
 
   it("renders plan name", async () => {
     const { default: PlanCard } = await import("@/components/workout-plans/views/plan-card");
@@ -68,5 +70,13 @@ describe("PlanCard", () => {
     const { default: PlanCard } = await import("@/components/workout-plans/views/plan-card");
     render(<PlanCard plan={mockPlan} onEdit={onEdit} onDelete={onDelete} onClick={onClick} />);
     expect(screen.getByRole("button", { name: "Actions" })).toBeDefined();
+  });
+
+  it("does not call onClick when actions button is clicked", async () => {
+    const user = userEvent.setup();
+    const { default: PlanCard } = await import("@/components/workout-plans/views/plan-card");
+    render(<PlanCard plan={mockPlan} onEdit={vi.fn()} onDelete={vi.fn()} onClick={onClick} />);
+    await user.click(screen.getByRole("button", { name: "Actions" }));
+    expect(onClick).not.toHaveBeenCalled();
   });
 });
