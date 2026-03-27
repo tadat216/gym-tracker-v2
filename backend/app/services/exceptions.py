@@ -16,3 +16,9 @@ class InvalidReferenceError(Exception):
         self.entity = entity
         self.field = field
         super().__init__(f"Invalid {field} for {entity}")
+
+
+class InvalidReorderError(Exception):
+    def __init__(self, entity: str):
+        self.entity = entity
+        super().__init__(f"Reorder list must contain all {entity} IDs exactly")
