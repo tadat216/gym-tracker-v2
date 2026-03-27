@@ -1,31 +1,19 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlmodel import select
 
 from app.auth.dependencies import get_current_user
 from app.database import get_session
-from app.models.exercise import Exercise
-from app.models.muscle_group import MuscleGroup
 from app.models.user import User
 from app.schemas.auth import MessageResponse
 from app.schemas.exercise import ExerciseCreate, ExerciseRead, ExerciseUpdate
+from app.services.exceptions import (
+    DuplicateNameError,
+    InvalidReferenceError,
+    NotFoundError,
+)
+from app.services.exercise import ExerciseService
 
 router = APIRouter(prefix="/api/v1/exercises", tags=["exercises"])
-
-
-async def _validate_muscle_group(
-    session: AsyncSession, muscle_group_id: int, user_id: int
-) -> None:
-    """Validate that the muscle group exists, is active, and belongs to the user."""
-    result = await session.execute(
-        select(MuscleGroup).where(
-            MuscleGroup.id == muscle_group_id,
-            MuscleGroup.user_id == user_id,
-            MuscleGroup.is_active == True,  # noqa: E712
-        )
-    )
-    if result.scalar_one_or_none() is None:
-        raise HTTPException(status_code=400, detail="Invalid muscle group")
 
 
 @router.get("", response_model=list[ExerciseRead], operation_id="listExercises")
@@ -34,14 +22,8 @@ async def list_exercises(
     session: AsyncSession = Depends(get_session),
     current_user: User = Depends(get_current_user),
 ) -> list[ExerciseRead]:
-    query = select(Exercise).where(
-        Exercise.user_id == current_user.id,
-        Exercise.is_active == True,  # noqa: E712
-    )
-    if muscle_group_id is not None:
-        query = query.where(Exercise.muscle_group_id == muscle_group_id)
-    result = await session.execute(query)
-    exercises = result.scalars().all()
+    svc = ExerciseService(session, current_user.id)
+    exercises = await svc.list(muscle_group_id=muscle_group_id)
     return [ExerciseRead.model_validate(e) for e in exercises]
 
 
@@ -51,16 +33,11 @@ async def get_exercise(
     session: AsyncSession = Depends(get_session),
     current_user: User = Depends(get_current_user),
 ) -> ExerciseRead:
-    result = await session.execute(
-        select(Exercise).where(
-            Exercise.id == exercise_id,
-            Exercise.user_id == current_user.id,
-            Exercise.is_active == True,  # noqa: E712
-        )
-    )
-    ex = result.scalar_one_or_none()
-    if ex is None:
-        raise HTTPException(status_code=404, detail="Exercise not found")
+    svc = ExerciseService(session, current_user.id)
+    try:
+        ex = await svc.get(exercise_id)
+    except NotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
     return ExerciseRead.model_validate(ex)
 
 
@@ -72,26 +49,13 @@ async def create_exercise(
     session: AsyncSession = Depends(get_session),
     current_user: User = Depends(get_current_user),
 ) -> ExerciseRead:
-    await _validate_muscle_group(session, body.muscle_group_id, current_user.id)
-    existing = await session.execute(
-        select(Exercise).where(
-            Exercise.user_id == current_user.id,
-            Exercise.name == body.name,
-            Exercise.is_active == True,  # noqa: E712
-        )
-    )
-    if existing.scalar_one_or_none() is not None:
-        raise HTTPException(
-            status_code=409, detail="Exercise with this name already exists"
-        )
-    ex = Exercise(
-        name=body.name,
-        type=body.type,
-        muscle_group_id=body.muscle_group_id,
-        user_id=current_user.id,
-    )
-    session.add(ex)
-    await session.flush()
+    svc = ExerciseService(session, current_user.id)
+    try:
+        ex = await svc.create(body)
+    except InvalidReferenceError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except DuplicateNameError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
     return ExerciseRead.model_validate(ex)
 
 
@@ -104,37 +68,15 @@ async def update_exercise(
     session: AsyncSession = Depends(get_session),
     current_user: User = Depends(get_current_user),
 ) -> ExerciseRead:
-    result = await session.execute(
-        select(Exercise).where(
-            Exercise.id == exercise_id,
-            Exercise.user_id == current_user.id,
-            Exercise.is_active == True,  # noqa: E712
-        )
-    )
-    ex = result.scalar_one_or_none()
-    if ex is None:
-        raise HTTPException(status_code=404, detail="Exercise not found")
-    update_data = body.model_dump(exclude_unset=True)
-    if "muscle_group_id" in update_data:
-        await _validate_muscle_group(
-            session, update_data["muscle_group_id"], current_user.id
-        )
-    if "name" in update_data:
-        existing = await session.execute(
-            select(Exercise).where(
-                Exercise.user_id == current_user.id,
-                Exercise.name == update_data["name"],
-                Exercise.is_active == True,  # noqa: E712
-                Exercise.id != exercise_id,
-            )
-        )
-        if existing.scalar_one_or_none() is not None:
-            raise HTTPException(
-                status_code=409, detail="Exercise with this name already exists"
-            )
-    for key, value in update_data.items():
-        setattr(ex, key, value)
-    await session.flush()
+    svc = ExerciseService(session, current_user.id)
+    try:
+        ex = await svc.update(exercise_id, body)
+    except NotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except InvalidReferenceError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except DuplicateNameError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
     return ExerciseRead.model_validate(ex)
 
 
@@ -146,16 +88,9 @@ async def delete_exercise(
     session: AsyncSession = Depends(get_session),
     current_user: User = Depends(get_current_user),
 ) -> MessageResponse:
-    result = await session.execute(
-        select(Exercise).where(
-            Exercise.id == exercise_id,
-            Exercise.user_id == current_user.id,
-            Exercise.is_active == True,  # noqa: E712
-        )
-    )
-    ex = result.scalar_one_or_none()
-    if ex is None:
-        raise HTTPException(status_code=404, detail="Exercise not found")
-    ex.is_active = False
-    await session.flush()
+    svc = ExerciseService(session, current_user.id)
+    try:
+        ex = await svc.delete(exercise_id)
+    except NotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
     return MessageResponse(message=f"Exercise '{ex.name}' deactivated")
