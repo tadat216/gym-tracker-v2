@@ -178,3 +178,24 @@ async def exercise(session, regular_user, muscle_group):
     session.add(ex)
     await session.flush()
     return ex
+
+
+@pytest_asyncio.fixture
+async def system_muscle_group(session, system_user):
+    mg = MuscleGroup(name="Chest", color="#EF4444", user_id=system_user.id)
+    session.add(mg)
+    await session.flush()
+    return mg
+
+
+@pytest_asyncio.fixture
+async def system_exercise(session, system_user, system_muscle_group):
+    ex = Exercise(
+        name="Bench Press",
+        type=ExerciseType.WEIGHT,
+        muscle_group_id=system_muscle_group.id,
+        user_id=system_user.id,
+    )
+    session.add(ex)
+    await session.flush()
+    return ex
