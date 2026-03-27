@@ -1,4 +1,8 @@
 import pytest
+from sqlmodel import select
+
+from app.models.exercise import Exercise
+from app.models.muscle_group import MuscleGroup
 
 
 class TestListUsers:
@@ -33,6 +37,48 @@ class TestCreateUser:
         assert data["email"] == "new@test.com"
         assert data["is_admin"] is False
         assert "password_hash" not in data
+
+    async def test_create_user_copies_system_defaults(
+        self, admin_client, session, system_user, system_muscle_group, system_exercise
+    ):
+        response = await admin_client.post(
+            "/api/v1/users",
+            json={
+                "username": "defaultsuser",
+                "email": "defaults@test.com",
+                "password": "pass",
+            },
+        )
+        assert response.status_code == 201
+        new_user_id = response.json()["id"]
+
+        groups = (
+            await session.execute(
+                select(MuscleGroup).where(MuscleGroup.user_id == new_user_id)
+            )
+        ).scalars().all()
+        assert len(groups) == 1
+        assert groups[0].name == "Chest"
+
+        exercises = (
+            await session.execute(
+                select(Exercise).where(Exercise.user_id == new_user_id)
+            )
+        ).scalars().all()
+        assert len(exercises) == 1
+        assert exercises[0].name == "Bench Press"
+
+    async def test_create_user_succeeds_without_system_user(self, admin_client):
+        """User creation works even when no system user exists."""
+        response = await admin_client.post(
+            "/api/v1/users",
+            json={
+                "username": "nosystemuser",
+                "email": "nosystem@test.com",
+                "password": "pass",
+            },
+        )
+        assert response.status_code == 201
 
     async def test_create_user_duplicate_username(self, admin_client, regular_user):
         response = await admin_client.post(
