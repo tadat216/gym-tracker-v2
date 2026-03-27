@@ -175,85 +175,158 @@ Following the existing hooks/views/container pattern exactly as `components/user
 - Barrel files re-export as named: `export { default as X } from "./x"`
 - Skeleton and list are separate files (like `user-list.tsx` + `user-list-skeleton.tsx`)
 - Container wires hooks → single top-level page view
+- **Single responsibility per file** — each file does one thing, ~15-55 lines for views, ~60-85 lines for containers/hooks
+
+### Size Budget (based on existing codebase)
+
+| File type | Reference | Lines | Target |
+|-----------|-----------|-------|--------|
+| View (page) | `users-page.tsx` | 53 | ≤60 |
+| View (form sheet) | `user-form-sheet.tsx` | 45 | ≤50 |
+| View (list row) | `user-row.tsx` | 24 | ≤30 |
+| View (list) | `user-list.tsx` | 15 | ≤20 |
+| View (skeleton) | `user-list-skeleton.tsx` | 18 | ≤20 |
+| Hook (data) | `use-users-data.ts` | 64 | ≤70 |
+| Hook (form) | `use-user-form.ts` | 35 | ≤40 |
+| Container | `users/container.tsx` | 86 | ≤90 |
+| Types | `users/types.ts` | 53 | ≤60 per file |
+
+### Problem: Two Entities on One Page
+
+The Users page manages ONE entity (users). This page manages TWO (muscle groups + exercises). A single container and types file would be ~2x the size and mix two concerns.
+
+**Solution:** Split into two sub-components, each following the Users pattern independently. The page-level container composes them.
 
 ```
 components/exercise-library/
-├── hooks/
-│   ├── index.ts                          # barrel: re-exports all hooks
-│   ├── use-muscle-groups-data.ts         # Orval CRUD hooks for muscle groups only
-│   ├── use-exercises-data.ts             # Orval CRUD hooks for exercises only
-│   ├── use-exercise-form.ts              # Exercise form state (mode, values, open/close)
-│   └── use-muscle-group-form.ts          # Muscle group form state (mode, values, open/close)
-├── views/
-│   ├── index.ts                          # barrel: re-exports all views
-│   ├── exercise-library-page.tsx         # Top-level layout: chips + list + FAB + all sheets
-│   ├── muscle-group-chips.tsx            # Chip row with gear icon
-│   ├── exercise-list/
-│   │   ├── index.ts                      # barrel: ExerciseList, ExerciseRow, ExerciseListSkeleton
-│   │   ├── exercise-list.tsx             # Maps exercises → ExerciseRow
-│   │   ├── exercise-row.tsx              # Single card-row with color bar + type badge + ⋯ menu
-│   │   └── exercise-list-skeleton.tsx    # Loading skeleton (3 placeholder rows)
-│   ├── exercise-form-sheet.tsx           # Create/edit exercise bottom sheet
-│   ├── muscle-group-sheet.tsx            # Manage muscle groups list bottom sheet
-│   ├── muscle-group-row.tsx              # Single muscle group row in manage sheet
-│   └── muscle-group-form-sheet.tsx       # Create/edit muscle group bottom sheet (name + color picker)
-├── types.ts                              # ALL prop interfaces + form types
-├── container.tsx                         # Wires hooks → ExerciseLibraryPage
-└── index.ts                              # barrel: export { default as ExerciseLibraryContainer }
+├── container.tsx                           # Page-level: composes both sub-containers
+├── types.ts                               # Page-level types only (ExerciseLibraryPageProps)
+├── index.ts                               # barrel: export { default as ExerciseLibraryContainer }
+│
+├── exercises/                              # Exercise CRUD — mirrors users/ exactly
+│   ├── hooks/
+│   │   ├── index.ts
+│   │   ├── use-exercises-data.ts           # Orval CRUD hooks (~64 lines)
+│   │   └── use-exercise-form.ts            # Form state management (~35 lines)
+│   ├── views/
+│   │   ├── index.ts
+│   │   ├── exercise-list/
+│   │   │   ├── index.ts
+│   │   │   ├── exercise-list.tsx           # Maps exercises → ExerciseRow (~15 lines)
+│   │   │   ├── exercise-row.tsx            # card-row + color bar + type badge + ⋯ menu (~30 lines)
+│   │   │   └── exercise-list-skeleton.tsx  # 3 placeholder rows (~18 lines)
+│   │   └── exercise-form-sheet.tsx         # FormSheet: name + type toggle + group select (~50 lines)
+│   └── types.ts                            # ExerciseFormMode, ExerciseFormValues, all exercise view props (~40 lines)
+│
+├── muscle-groups/                          # Muscle Group CRUD — mirrors users/ exactly
+│   ├── hooks/
+│   │   ├── index.ts
+│   │   ├── use-muscle-groups-data.ts       # Orval CRUD hooks (~64 lines)
+│   │   └── use-muscle-group-form.ts        # Form state management (~35 lines)
+│   ├── views/
+│   │   ├── index.ts
+│   │   ├── muscle-group-chips.tsx          # Scrollable chip row + gear icon (~30 lines)
+│   │   ├── muscle-group-list/
+│   │   │   ├── index.ts
+│   │   │   ├── muscle-group-list.tsx       # Maps groups → MuscleGroupRow (~15 lines)
+│   │   │   └── muscle-group-row.tsx        # Color swatch + name + ⋯ menu (~25 lines)
+│   │   ├── muscle-group-sheet.tsx          # FormSheet wrapper for manage list (~35 lines)
+│   │   └── muscle-group-form-sheet.tsx     # FormSheet: name + color picker (~45 lines)
+│   └── types.ts                            # MuscleGroupFormMode, MuscleGroupFormValues, all group view props (~40 lines)
+│
+└── views/
+    ├── index.ts
+    └── exercise-library-page.tsx           # Layout: chips + list/empty + FAB (~45 lines)
 ```
 
-### types.ts — Prop Interfaces
+### Why This Split Works
 
-Every view receives typed props. No view calls hooks directly.
+Each sub-component is a **self-contained CRUD unit** that mirrors `users/`:
+
+| Concern | `exercises/` handles | `muscle-groups/` handles |
+|---------|---------------------|-------------------------|
+| Data hook | `use-exercises-data.ts` | `use-muscle-groups-data.ts` |
+| Form hook | `use-exercise-form.ts` | `use-muscle-group-form.ts` |
+| Types | `exercises/types.ts` | `muscle-groups/types.ts` |
+| List view | `exercise-list/` | `muscle-group-list/` |
+| Form sheet | `exercise-form-sheet.tsx` | `muscle-group-form-sheet.tsx` |
+
+**When something breaks:** If the exercise form has a bug, you look in `exercises/`. If the color picker is wrong, you look in `muscle-groups/`. Never both.
+
+### Page-Level Container
+
+`container.tsx` (~85 lines) composes both sub-components:
 
 ```ts
-// Form types
-type ExerciseFormMode = "closed" | "create" | "edit";
-type MuscleGroupFormMode = "closed" | "create" | "edit";
+const ExerciseLibraryContainer = () => {
+  // Muscle group data + form (for chips, manage sheet, form sheet)
+  const mgData = useMuscleGroupsData();
+  const mgForm = useMuscleGroupForm();
+  const [mgDeleteConfirm, setMgDeleteConfirm] = useState(false);
+  const [mgSubmitError, setMgSubmitError] = useState<string | null>(null);
+  const [mgSheetOpen, setMgSheetOpen] = useState(false);
 
-interface ExerciseFormValues { name: string; type: ExerciseType; muscleGroupId: number | null; }
-interface MuscleGroupFormValues { name: string; color: string; }
+  // Exercise data + form (for list, form sheet)
+  const exData = useExercisesData(selectedMuscleGroupId);
+  const exForm = useExerciseForm();
+  const [exDeleteConfirm, setExDeleteConfirm] = useState(false);
+  const [exSubmitError, setExSubmitError] = useState<string | null>(null);
 
-// View props (mirrors the Users pattern)
-interface ExerciseLibraryPageProps { ... }    // all props from container
-interface MuscleGroupChipsProps { ... }       // groups, selectedId, onSelect, onManageClick
-interface ExerciseListProps { ... }           // exercises, muscleGroupColor, onExerciseClick
-interface ExerciseRowProps { ... }            // exercise, color, onEdit, onDelete
-interface ExerciseFormSheetProps { ... }      // mode, open, values, muscleGroups, isSubmitting, error, ...
-interface MuscleGroupSheetProps { ... }       // open, groups, onAdd, onEdit, onDelete, onClose
-interface MuscleGroupRowProps { ... }         // group, onEdit, onDelete
-interface MuscleGroupFormSheetProps { ... }   // mode, open, values, isSubmitting, error, ...
+  // Selected chip state
+  const [selectedMuscleGroupId, setSelectedMuscleGroupId] = useState<number | null>(null);
+
+  // Auto-select first group when data loads
+  // ... handle* functions follow users/container.tsx pattern ...
+
+  return <ExerciseLibraryPage ... />;
+};
 ```
+
+### Page View
+
+`exercise-library-page.tsx` (~45 lines) is a pure layout component:
+
+```tsx
+const ExerciseLibraryPage = (props: ExerciseLibraryPageProps) => {
+  return (
+    <div className="relative min-h-[calc(100dvh-56px)]">
+      <MuscleGroupChips ... />
+      <CountLabel ... />
+      {isLoading ? <ExerciseListSkeleton /> : isEmpty ? <ListEmpty ... /> : <ExerciseList ... />}
+      {hasMuscleGroups && <Fab ... />}
+      <ExerciseFormSheet ... />
+      <ConfirmDialog ... />      {/* exercise delete */}
+      <MuscleGroupSheet ... />
+      <MuscleGroupFormSheet ... />
+      <ConfirmDialog ... />      {/* muscle group delete */}
+    </div>
+  );
+};
+```
+
+This is ~45 lines because each child is a self-contained component that receives only its own props — the page just arranges them.
 
 ### Data Hooks — One Per Entity
 
-**`use-muscle-groups-data.ts`** — follows `use-users-data.ts` pattern:
+**`use-muscle-groups-data.ts`** (~64 lines) — follows `use-users-data.ts` pattern:
 - Wraps `useListMuscleGroups`, `useCreateMuscleGroup`, `useUpdateMuscleGroup`, `useDeleteMuscleGroup`
 - Each mutation: `mutateAsync` → `invalidateQueries` → `toast.success`
 - Returns: `{ muscleGroups, isLoading, createMuscleGroup, updateMuscleGroup, deleteMuscleGroup, isCreating, isUpdating, isDeleting }`
 
-**`use-exercises-data.ts`** — same pattern:
+**`use-exercises-data.ts`** (~64 lines) — same pattern:
 - Wraps `useListExercises` (passes `muscle_group_id` param), `useCreateExercise`, `useUpdateExercise`, `useDeleteExercise`
-- Invalidates both exercise and muscle group queries on mutation (muscle group deletion cascades)
+- Each mutation invalidates exercise list queries
 - Returns: `{ exercises, isLoading, createExercise, updateExercise, deleteExercise, isCreating, isUpdating, isDeleting }`
 
 ### Form Hooks — One Per Entity
 
-**`use-exercise-form.ts`** — follows `use-user-form.ts` pattern:
+**`use-exercise-form.ts`** (~35 lines) — follows `use-user-form.ts` pattern:
 - State: `mode`, `formValues: ExerciseFormValues`, `editingExercise`
 - Methods: `openCreate(muscleGroupId)`, `openEdit(exercise)`, `close()`, `setField()`
 
-**`use-muscle-group-form.ts`** — same pattern:
+**`use-muscle-group-form.ts`** (~35 lines) — same pattern:
 - State: `mode`, `formValues: MuscleGroupFormValues`, `editingMuscleGroup`
 - Methods: `openCreate()`, `openEdit(group)`, `close()`, `setField()`
-
-### Container — Wires Everything
-
-`container.tsx` follows `users/container.tsx` exactly:
-- Calls all four hooks
-- Manages `deleteConfirmOpen`, `submitError` state
-- Handles async submit/delete with try/catch and 409 detection
-- Passes all props down to `ExerciseLibraryPage`
 
 ### New UI Components
 
