@@ -236,3 +236,77 @@ class TestRemovePlanExercise:
             f"/api/v1/workout-plans/{workout_plan.id}/exercises/99999"
         )
         assert response.status_code == 404
+
+
+class TestReorderPlanExercises:
+    async def test_reorder_exercises(
+        self, user_client, workout_plan, exercise, session, regular_user,
+        muscle_group,
+    ):
+        ex2 = Exercise(
+            name="Incline Press",
+            type=ExerciseType.WEIGHT,
+            muscle_group_id=muscle_group.id,
+            user_id=regular_user.id,
+        )
+        session.add(ex2)
+        await session.flush()
+
+        pe1 = PlanExercise(
+            plan_id=workout_plan.id, exercise_id=exercise.id, sort_order=0
+        )
+        pe2 = PlanExercise(
+            plan_id=workout_plan.id, exercise_id=ex2.id, sort_order=1
+        )
+        session.add_all([pe1, pe2])
+        await session.flush()
+
+        response = await user_client.patch(
+            f"/api/v1/workout-plans/{workout_plan.id}/exercises/reorder",
+            json={"plan_exercise_ids": [pe2.id, pe1.id]},
+        )
+        assert response.status_code == 200
+
+        plan_response = await user_client.get(
+            f"/api/v1/workout-plans/{workout_plan.id}"
+        )
+        exercises = plan_response.json()["exercises"]
+        assert exercises[0]["id"] == pe2.id
+        assert exercises[0]["sort_order"] == 0
+        assert exercises[1]["id"] == pe1.id
+        assert exercises[1]["sort_order"] == 1
+
+    async def test_reorder_plan_not_found(self, user_client):
+        response = await user_client.patch(
+            "/api/v1/workout-plans/99999/exercises/reorder",
+            json={"plan_exercise_ids": []},
+        )
+        assert response.status_code == 404
+
+    async def test_reorder_missing_ids(
+        self, user_client, workout_plan, exercise, session
+    ):
+        pe = PlanExercise(
+            plan_id=workout_plan.id, exercise_id=exercise.id, sort_order=0
+        )
+        session.add(pe)
+        await session.flush()
+        response = await user_client.patch(
+            f"/api/v1/workout-plans/{workout_plan.id}/exercises/reorder",
+            json={"plan_exercise_ids": []},
+        )
+        assert response.status_code == 400
+
+    async def test_reorder_extra_ids(
+        self, user_client, workout_plan, exercise, session
+    ):
+        pe = PlanExercise(
+            plan_id=workout_plan.id, exercise_id=exercise.id, sort_order=0
+        )
+        session.add(pe)
+        await session.flush()
+        response = await user_client.patch(
+            f"/api/v1/workout-plans/{workout_plan.id}/exercises/reorder",
+            json={"plan_exercise_ids": [pe.id, 99999]},
+        )
+        assert response.status_code == 400

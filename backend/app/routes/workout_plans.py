@@ -8,12 +8,14 @@ from app.schemas.auth import MessageResponse
 from app.schemas.workout_plan import (
     PlanExerciseCreate,
     PlanExerciseRead,
+    PlanExerciseReorder,
     WorkoutPlanCreate,
     WorkoutPlanRead,
     WorkoutPlanUpdate,
 )
 from app.services.exceptions import (
     DuplicateNameError,
+    InvalidReorderError,
     InvalidReferenceError,
     NotFoundError,
 )
@@ -142,6 +144,27 @@ async def add_plan_exercise(
     except InvalidReferenceError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     return PlanExerciseRead.model_validate(pe)
+
+
+@router.patch(
+    "/{plan_id}/exercises/reorder",
+    response_model=MessageResponse,
+    operation_id="reorderPlanExercises",
+)
+async def reorder_plan_exercises(
+    plan_id: int,
+    body: PlanExerciseReorder,
+    session: AsyncSession = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+) -> MessageResponse:
+    svc = WorkoutPlanService(session, current_user.id)
+    try:
+        await svc.reorder_exercises(plan_id, body)
+    except NotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except InvalidReorderError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return MessageResponse(message="Exercises reordered")
 
 
 @router.delete(

@@ -8,8 +8,8 @@ from sqlmodel import select
 from app.models.plan_exercise import PlanExercise
 from app.models.workout_plan import WorkoutPlan
 from app.models.exercise import Exercise
-from app.schemas.workout_plan import PlanExerciseCreate, WorkoutPlanCreate, WorkoutPlanUpdate
-from app.services.exceptions import DuplicateNameError, InvalidReferenceError, NotFoundError
+from app.schemas.workout_plan import PlanExerciseCreate, PlanExerciseReorder, WorkoutPlanCreate, WorkoutPlanUpdate
+from app.services.exceptions import DuplicateNameError, InvalidReorderError, InvalidReferenceError, NotFoundError
 
 
 class WorkoutPlanService:
@@ -123,6 +123,20 @@ class WorkoutPlanService:
         if pe is None:
             raise NotFoundError("Plan exercise")
         await self.session.delete(pe)
+        await self.session.flush()
+
+    async def reorder_exercises(
+        self, plan_id: int, data: PlanExerciseReorder
+    ) -> None:
+        _, exercises = await self.get(plan_id)
+        current_ids = {e.id for e in exercises}
+        new_ids = set(data.plan_exercise_ids)
+        if current_ids != new_ids:
+            raise InvalidReorderError("plan exercise")
+
+        id_to_exercise = {e.id: e for e in exercises}
+        for order, pe_id in enumerate(data.plan_exercise_ids):
+            id_to_exercise[pe_id].sort_order = order
         await self.session.flush()
 
     async def _validate_exercise(self, exercise_id: int) -> None:
