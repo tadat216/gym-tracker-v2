@@ -1,9 +1,13 @@
+from sqlalchemy import delete
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
 
+from app.auth.password import hash_password
 from app.models.exercise import Exercise, ExerciseType
 from app.models.muscle_group import MuscleGroup
+from app.models.plan_exercise import PlanExercise
 from app.models.user import User
+from app.models.workout_plan import WorkoutPlan
 
 SEED_MUSCLE_GROUPS = [
     {"name": "Chest", "color": "#EF4444"},
@@ -173,3 +177,122 @@ async def copy_defaults_to_user(
         session.add(new_exercise)
 
     await session.flush()
+
+
+SEED_USERNAME = "testuser"
+SEED_EMAIL = "testuser@example.com"
+SEED_PASSWORD = "password123"
+
+SEED_PLANS = [
+    {
+        "name": "Push Day",
+        "exercises": [
+            "Bench Press",
+            "Incline Dumbbell Press",
+            "Overhead Press",
+            "Lateral Raise",
+            "Tricep Pushdown",
+            "Cable Overhead Tricep Extension",
+        ],
+    },
+    {
+        "name": "Pull Day",
+        "exercises": [
+            "Pull-ups",
+            "Lat Pulldown",
+            "Seated Cable Row",
+            "Face Pull",
+            "Barbell Curl",
+            "Hammer Curl",
+        ],
+    },
+    {
+        "name": "Leg Day",
+        "exercises": [
+            "Squat",
+            "Leg Press",
+            "Romanian Deadlift",
+            "Leg Extension",
+            "Leg Curl",
+            "Standing Calf Raise",
+        ],
+    },
+]
+
+
+async def seed_test_user(session: AsyncSession) -> None:
+    """Create a test user with workout plans. Deletes and recreates if exists."""
+    # Delete existing test user and all related data
+    result = await session.execute(
+        select(User).where(User.username == SEED_USERNAME)
+    )
+    existing = result.scalar_one_or_none()
+    if existing is not None:
+        uid = existing.id
+        # Delete plan exercises via plans owned by this user
+        user_plans = (
+            await session.execute(
+                select(WorkoutPlan.id).where(WorkoutPlan.user_id == uid)
+            )
+        ).scalars().all()
+        if user_plans:
+            await session.execute(
+                delete(PlanExercise).where(
+                    PlanExercise.plan_id.in_(user_plans)  # type: ignore[union-attr]
+                )
+            )
+        await session.execute(
+            delete(WorkoutPlan).where(WorkoutPlan.user_id == uid)
+        )
+        await session.execute(
+            delete(Exercise).where(Exercise.user_id == uid)
+        )
+        await session.execute(
+            delete(MuscleGroup).where(MuscleGroup.user_id == uid)
+        )
+        await session.delete(existing)
+        await session.flush()
+
+    # Create user
+    user = User(
+        username=SEED_USERNAME,
+        email=SEED_EMAIL,
+        password_hash=hash_password(SEED_PASSWORD),
+    )
+    session.add(user)
+    await session.flush()
+
+    # Copy default muscle groups and exercises
+    system_result = await session.execute(
+        select(User).where(User.username == "system")
+    )
+    system_user = system_result.scalar_one_or_none()
+    if system_user is None:
+        system_user = await create_system_user(session)
+    assert system_user.id is not None
+    assert user.id is not None
+    await copy_defaults_to_user(session, system_user.id, user.id)
+
+    # Build exercise name → id map for this user
+    user_exercises = (
+        await session.execute(select(Exercise).where(Exercise.user_id == user.id))
+    ).scalars().all()
+    exercise_map = {ex.name: ex.id for ex in user_exercises}
+
+    # Create workout plans
+    for plan_data in SEED_PLANS:
+        plan = WorkoutPlan(name=plan_data["name"], user_id=user.id)
+        session.add(plan)
+        await session.flush()
+
+        for order, ex_name in enumerate(plan_data["exercises"]):
+            if ex_name in exercise_map:
+                pe = PlanExercise(
+                    plan_id=plan.id,
+                    exercise_id=exercise_map[ex_name],
+                    sort_order=order,
+                )
+                session.add(pe)
+
+    await session.flush()
+    await session.commit()
