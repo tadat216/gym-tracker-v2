@@ -1,3 +1,5 @@
+import logging
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -9,6 +11,9 @@ from app.database import get_session
 from app.models.user import User
 from app.schemas.auth import MessageResponse
 from app.schemas.user import UserCreate, UserRead, UserUpdate
+from app.seed import copy_defaults_to_user
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/v1/users", tags=["users"])
 
@@ -54,6 +59,16 @@ async def create_user(
         raise HTTPException(
             status_code=409, detail="Username or email already exists"
         ) from exc
+
+    try:
+        system_user = (
+            await session.execute(select(User).where(User.is_system == True))  # noqa: E712
+        ).scalar_one_or_none()
+        if system_user:
+            await copy_defaults_to_user(session, system_user.id, user.id)
+    except Exception:
+        logger.warning("Failed to copy default exercises to user %s", user.id, exc_info=True)
+
     return UserRead.model_validate(user)
 
 
