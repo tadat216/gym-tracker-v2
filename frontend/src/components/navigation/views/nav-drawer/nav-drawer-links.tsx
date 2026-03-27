@@ -1,4 +1,4 @@
-import { Home, Users } from "lucide-react";
+import { Home, Dumbbell, Users } from "lucide-react";
 import NavLink from "./nav-link";
 import type { NavDrawerLinksProps } from "../../types";
 
@@ -10,6 +10,13 @@ const NavDrawerLinks = ({ isAdmin, currentPath, onNavigate }: NavDrawerLinksProp
         label="Home"
         href="/"
         isActive={currentPath === "/"}
+        onClick={onNavigate}
+      />
+      <NavLink
+        icon={Dumbbell}
+        label="Exercise Library"
+        href="/exercises"
+        isActive={currentPath === "/exercises"}
         onClick={onNavigate}
       />
       {isAdmin && (
