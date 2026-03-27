@@ -166,32 +166,99 @@ After running `scripts/generate-api.sh`, Orval will generate:
 
 ## Component Structure
 
-Following the existing hooks/views/container pattern:
+Following the existing hooks/views/container pattern exactly as `components/users/`.
+
+**Key rules from the codebase:**
+- One data hook per entity (like `use-users-data.ts` — not bundled)
+- Every view component gets a props interface in `types.ts`
+- Views use `const + displayName + default export` pattern
+- Barrel files re-export as named: `export { default as X } from "./x"`
+- Skeleton and list are separate files (like `user-list.tsx` + `user-list-skeleton.tsx`)
+- Container wires hooks → single top-level page view
 
 ```
 components/exercise-library/
 ├── hooks/
-│   ├── use-exercise-library-data.ts    # Wraps Orval CRUD hooks for both entities
-│   ├── use-exercise-form.ts            # Exercise form state management
-│   └── use-muscle-group-form.ts        # Muscle group form state management
+│   ├── index.ts                          # barrel: re-exports all hooks
+│   ├── use-muscle-groups-data.ts         # Orval CRUD hooks for muscle groups only
+│   ├── use-exercises-data.ts             # Orval CRUD hooks for exercises only
+│   ├── use-exercise-form.ts              # Exercise form state (mode, values, open/close)
+│   └── use-muscle-group-form.ts          # Muscle group form state (mode, values, open/close)
 ├── views/
-│   ├── exercise-library-page.tsx       # Main page layout (chips + list + FAB + sheets)
-│   ├── muscle-group-chips.tsx          # Chip row with gear icon
+│   ├── index.ts                          # barrel: re-exports all views
+│   ├── exercise-library-page.tsx         # Top-level layout: chips + list + FAB + all sheets
+│   ├── muscle-group-chips.tsx            # Chip row with gear icon
 │   ├── exercise-list/
-│   │   ├── exercise-list.tsx           # List container + skeleton
-│   │   └── exercise-row.tsx            # Single exercise card-row
-│   ├── exercise-form-sheet.tsx         # Create/edit exercise bottom sheet
-│   ├── muscle-group-sheet.tsx          # Manage muscle groups bottom sheet
-│   └── muscle-group-form-sheet.tsx     # Create/edit muscle group bottom sheet
-├── types.ts                            # Shared TypeScript interfaces
-├── container.tsx                       # Wires hooks → views
-└── index.ts                            # Public barrel exports
+│   │   ├── index.ts                      # barrel: ExerciseList, ExerciseRow, ExerciseListSkeleton
+│   │   ├── exercise-list.tsx             # Maps exercises → ExerciseRow
+│   │   ├── exercise-row.tsx              # Single card-row with color bar + type badge + ⋯ menu
+│   │   └── exercise-list-skeleton.tsx    # Loading skeleton (3 placeholder rows)
+│   ├── exercise-form-sheet.tsx           # Create/edit exercise bottom sheet
+│   ├── muscle-group-sheet.tsx            # Manage muscle groups list bottom sheet
+│   ├── muscle-group-row.tsx              # Single muscle group row in manage sheet
+│   └── muscle-group-form-sheet.tsx       # Create/edit muscle group bottom sheet (name + color picker)
+├── types.ts                              # ALL prop interfaces + form types
+├── container.tsx                         # Wires hooks → ExerciseLibraryPage
+└── index.ts                              # barrel: export { default as ExerciseLibraryContainer }
 ```
 
-### New UI Components Needed
+### types.ts — Prop Interfaces
 
-- **SegmentedToggle** (`src/ui/segmented-toggle.tsx`) — reusable 3-option toggle for exercise type
-- **ColorPicker** (`src/ui/color-picker.tsx`) — full HSB color picker with hue slider and preview
+Every view receives typed props. No view calls hooks directly.
+
+```ts
+// Form types
+type ExerciseFormMode = "closed" | "create" | "edit";
+type MuscleGroupFormMode = "closed" | "create" | "edit";
+
+interface ExerciseFormValues { name: string; type: ExerciseType; muscleGroupId: number | null; }
+interface MuscleGroupFormValues { name: string; color: string; }
+
+// View props (mirrors the Users pattern)
+interface ExerciseLibraryPageProps { ... }    // all props from container
+interface MuscleGroupChipsProps { ... }       // groups, selectedId, onSelect, onManageClick
+interface ExerciseListProps { ... }           // exercises, muscleGroupColor, onExerciseClick
+interface ExerciseRowProps { ... }            // exercise, color, onEdit, onDelete
+interface ExerciseFormSheetProps { ... }      // mode, open, values, muscleGroups, isSubmitting, error, ...
+interface MuscleGroupSheetProps { ... }       // open, groups, onAdd, onEdit, onDelete, onClose
+interface MuscleGroupRowProps { ... }         // group, onEdit, onDelete
+interface MuscleGroupFormSheetProps { ... }   // mode, open, values, isSubmitting, error, ...
+```
+
+### Data Hooks — One Per Entity
+
+**`use-muscle-groups-data.ts`** — follows `use-users-data.ts` pattern:
+- Wraps `useListMuscleGroups`, `useCreateMuscleGroup`, `useUpdateMuscleGroup`, `useDeleteMuscleGroup`
+- Each mutation: `mutateAsync` → `invalidateQueries` → `toast.success`
+- Returns: `{ muscleGroups, isLoading, createMuscleGroup, updateMuscleGroup, deleteMuscleGroup, isCreating, isUpdating, isDeleting }`
+
+**`use-exercises-data.ts`** — same pattern:
+- Wraps `useListExercises` (passes `muscle_group_id` param), `useCreateExercise`, `useUpdateExercise`, `useDeleteExercise`
+- Invalidates both exercise and muscle group queries on mutation (muscle group deletion cascades)
+- Returns: `{ exercises, isLoading, createExercise, updateExercise, deleteExercise, isCreating, isUpdating, isDeleting }`
+
+### Form Hooks — One Per Entity
+
+**`use-exercise-form.ts`** — follows `use-user-form.ts` pattern:
+- State: `mode`, `formValues: ExerciseFormValues`, `editingExercise`
+- Methods: `openCreate(muscleGroupId)`, `openEdit(exercise)`, `close()`, `setField()`
+
+**`use-muscle-group-form.ts`** — same pattern:
+- State: `mode`, `formValues: MuscleGroupFormValues`, `editingMuscleGroup`
+- Methods: `openCreate()`, `openEdit(group)`, `close()`, `setField()`
+
+### Container — Wires Everything
+
+`container.tsx` follows `users/container.tsx` exactly:
+- Calls all four hooks
+- Manages `deleteConfirmOpen`, `submitError` state
+- Handles async submit/delete with try/catch and 409 detection
+- Passes all props down to `ExerciseLibraryPage`
+
+### New UI Components
+
+- **SegmentedToggle** (`src/ui/segmented-toggle.tsx`) — reusable toggle for N options, generic `<T extends string>`
+- **ColorPicker** (`src/ui/color-picker.tsx`) — full HSB color picker with hue slider and live preview
 
 ## Routing
 
