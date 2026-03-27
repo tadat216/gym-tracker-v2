@@ -20,7 +20,7 @@ export interface UsersPageProps {
   isDeleting: boolean;
   deleteConfirmOpen: boolean;
   onCreateClick: () => void;
-  onUserClick: (user: UserRead) => void;
+  onEditUser: (user: UserRead) => void;
   onDeleteUser: (user: UserRead) => void;
   onFormChange: (field: string, value: string) => void;
   onFormSubmit: () => void;

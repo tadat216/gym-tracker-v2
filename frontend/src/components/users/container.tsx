@@ -13,7 +13,7 @@ const UsersContainer = () => {
 
   const isSelfSelected = form.editingUser !== null && form.editingUser.id === currentUser?.id;
 
-  const handleUserClick = (user: UserRead) => {
+  const handleEditUser = (user: UserRead) => {
     setSubmitError(null);
     form.openEdit(user);
   };
@@ -77,7 +77,7 @@ const UsersContainer = () => {
       isSubmitting={data.isCreating || data.isUpdating}
       isSelfSelected={isSelfSelected} submitError={submitError}
       isDeleting={data.isDeleting} deleteConfirmOpen={deleteConfirmOpen}
-      onCreateClick={handleCreateClick} onUserClick={handleUserClick} onDeleteUser={handleDeleteUser}
+      onCreateClick={handleCreateClick} onEditUser={handleEditUser} onDeleteUser={handleDeleteUser}
       onFormChange={form.setField} onFormSubmit={handleFormSubmit}
       onFormClose={form.close}
       onDeleteClick={() => setDeleteConfirmOpen(true)}
