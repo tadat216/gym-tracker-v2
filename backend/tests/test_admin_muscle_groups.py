@@ -65,6 +65,17 @@ class TestAdminCreateMuscleGroup:
         )
         assert response.status_code == 409
 
+    async def test_create_reuse_deleted_name(self, admin_client, system_muscle_group):
+        await admin_client.delete(
+            f"/api/v1/admin/muscle-groups/{system_muscle_group.id}"
+        )
+        response = await admin_client.post(
+            "/api/v1/admin/muscle-groups",
+            json={"name": "Chest", "color": "#00FF00"},
+        )
+        assert response.status_code == 201
+        assert response.json()["name"] == "Chest"
+
 
 class TestAdminUpdateMuscleGroup:
     async def test_update_system_muscle_group(self, admin_client, system_muscle_group):

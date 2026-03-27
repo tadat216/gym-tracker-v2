@@ -120,6 +120,21 @@ class TestAdminCreateExercise:
         )
         assert response.status_code == 400
 
+    async def test_create_reuse_deleted_name(
+        self, admin_client, system_exercise, system_muscle_group
+    ):
+        await admin_client.delete(f"/api/v1/admin/exercises/{system_exercise.id}")
+        response = await admin_client.post(
+            "/api/v1/admin/exercises",
+            json={
+                "name": "Bench Press",
+                "type": "weight",
+                "muscle_group_id": system_muscle_group.id,
+            },
+        )
+        assert response.status_code == 201
+        assert response.json()["name"] == "Bench Press"
+
 
 class TestAdminUpdateExercise:
     async def test_update_system_exercise(self, admin_client, system_exercise):

@@ -147,6 +147,21 @@ class TestCreateExercise:
         )
         assert response.status_code == 400
 
+    async def test_create_exercise_reuse_deleted_name(
+        self, user_client, exercise, muscle_group
+    ):
+        await user_client.delete(f"/api/v1/exercises/{exercise.id}")
+        response = await user_client.post(
+            "/api/v1/exercises",
+            json={
+                "name": "Bench Press",
+                "type": "weight",
+                "muscle_group_id": muscle_group.id,
+            },
+        )
+        assert response.status_code == 201
+        assert response.json()["name"] == "Bench Press"
+
 
 class TestUpdateExercise:
     async def test_update_exercise(self, user_client, exercise):
