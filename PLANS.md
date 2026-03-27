@@ -17,6 +17,8 @@
 | 12 | docs/superpowers/specs/2026-03-26-workout-tables-design.md | Workout tables design spec | ✅ Done | - |
 | 13 | docs/superpowers/plans/2026-03-26-workout-tables.md | Workout tables implementation | ⬜ Pending | 12 |
 | 14 | docs/superpowers/specs/2026-03-27-muscle-exercise-crud-design.md | Muscle/exercise CRUD design spec | ✅ Done | 12 |
-| 15 | docs/superpowers/plans/2026-03-27-muscle-exercise-crud.md | Muscle/exercise CRUD endpoints | ⬜ Pending | 14 |
+| 15 | docs/superpowers/plans/2026-03-27-muscle-exercise-crud.md | Muscle/exercise CRUD endpoints | 🔄 In Progress | 14 |
+| 16 | docs/superpowers/specs/2026-03-27-service-layer-design.md | Service layer refactor design spec | ✅ Done | 15 |
+| 17 | docs/superpowers/plans/2026-03-27-service-layer-refactor.md | Service layer refactor | ⬜ Pending | 16 |
 
 ## Status legend: ⬜ Pending | 🔄 In Progress | ✅ Done
