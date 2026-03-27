@@ -8,6 +8,7 @@ from app.auth.password import hash_password
 from app.config import settings
 from app.database import async_session
 from app.models.user import User
+from app.routes.admin_exercises import router as admin_exercises_router
 from app.routes.admin_muscle_groups import router as admin_muscle_groups_router
 from app.routes.auth import router as auth_router
 from app.routes.exercises import router as exercises_router
@@ -55,6 +56,7 @@ app.include_router(users_router)
 app.include_router(muscle_groups_router)
 app.include_router(exercises_router)
 app.include_router(admin_muscle_groups_router)
+app.include_router(admin_exercises_router)
 
 
 @app.get("/api/v1/health")
