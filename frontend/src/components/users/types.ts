@@ -20,7 +20,8 @@ export interface UsersPageProps {
   isDeleting: boolean;
   deleteConfirmOpen: boolean;
   onCreateClick: () => void;
-  onUserClick: (user: UserRead) => void;
+  onEditUser: (user: UserRead) => void;
+  onDeleteUser: (user: UserRead) => void;
   onFormChange: (field: string, value: string) => void;
   onFormSubmit: () => void;
   onFormClose: () => void;
@@ -31,12 +32,14 @@ export interface UsersPageProps {
 
 export interface UserListProps {
   users: UserRead[];
-  onUserClick: (user: UserRead) => void;
+  onEditUser: (user: UserRead) => void;
+  onDeleteUser: (user: UserRead) => void;
 }
 
 export interface UserRowProps {
   user: UserRead;
-  onClick: () => void;
+  onEdit: () => void;
+  onDelete: () => void;
 }
 
 export interface UserFormSheetProps {

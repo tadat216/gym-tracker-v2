@@ -1,4 +1,5 @@
 import { Input } from "@/ui/input";
+import { FieldLabel } from "@/ui/field-label";
 import { cn } from "@/lib/utils";
 
 interface FormFieldProps {
@@ -17,9 +18,7 @@ function FormField({
 }: FormFieldProps) {
   return (
     <div className={className}>
-      <label htmlFor={id} className="mb-1.5 block text-[11px] font-bold uppercase tracking-[1px] text-muted-foreground">
-        {label}
-      </label>
+      <FieldLabel htmlFor={id}>{label}</FieldLabel>
       <Input
         id={id} type={type} value={value}
         onChange={(e) => onChange(e.target.value)}

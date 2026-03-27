@@ -40,8 +40,8 @@ vi.mock("@/components/users/views", () => ({
     return (
       <div data-testid="users-page">
         <button onClick={props.onCreateClick}>create</button>
-        <button onClick={() => props.onUserClick(mockUsers[1])}>edit-john</button>
-        <button onClick={() => props.onUserClick(mockUsers[0])}>edit-admin</button>
+        <button onClick={() => props.onEditUser(mockUsers[1])}>edit-john</button>
+        <button onClick={() => props.onEditUser(mockUsers[0])}>edit-admin</button>
       </div>
     );
   },
@@ -66,7 +66,7 @@ describe("UsersContainer", () => {
     expect(capturedProps.formMode).toBe("create");
   });
 
-  it("opens edit form when onUserClick is called", async () => {
+  it("opens edit form when onEditUser is called", async () => {
     const user = userEvent.setup();
     const { default: UsersContainer } = await import("@/components/users/container");
     render(<UsersContainer />);

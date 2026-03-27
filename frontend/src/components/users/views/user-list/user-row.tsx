@@ -1,10 +1,10 @@
-import { ChevronRight } from "lucide-react";
 import { Badge } from "@/ui/badge";
+import { RowActionMenu } from "@/ui/row-action-menu";
 import type { UserRowProps } from "../../types";
 
-const UserRow = ({ user, onClick }: UserRowProps) => {
+const UserRow = ({ user, onEdit, onDelete }: UserRowProps) => {
   return (
-    <button type="button" onClick={onClick} className="card-row">
+    <div className="card-row">
       <div className="avatar-initial">
         {user.username.charAt(0).toUpperCase()}
       </div>
@@ -15,8 +15,8 @@ const UserRow = ({ user, onClick }: UserRowProps) => {
         </div>
         <p className="truncate text-[13px] text-muted-foreground">{user.email}</p>
       </div>
-      <ChevronRight className="size-[18px] shrink-0 text-muted-foreground/30" />
-    </button>
+      <RowActionMenu onEdit={onEdit} onDelete={onDelete} />
+    </div>
   );
 };
 

@@ -14,11 +14,12 @@ axios.interceptors.request.use((config) => {
   return config;
 });
 
-// Response interceptor: clear auth on 401
+// Response interceptor: clear auth on 401/403
 axios.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (Axios.isAxiosError(error) && error.response?.status === 401) {
+    const status = Axios.isAxiosError(error) ? error.response?.status : undefined;
+    if (status === 401 || status === 403) {
       useAuthStore.getState().clear();
     }
     return Promise.reject(error);

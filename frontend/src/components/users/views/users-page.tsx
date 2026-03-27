@@ -9,7 +9,7 @@ import type { UsersPageProps } from "../types";
 const UsersPage = ({
   users, isLoading, formMode, formValues, isSubmitting, isSelfSelected,
   submitError, isDeleting, deleteConfirmOpen, editingUser,
-  onCreateClick, onUserClick, onFormChange, onFormSubmit, onFormClose,
+  onCreateClick, onEditUser, onDeleteUser, onFormChange, onFormSubmit, onFormClose,
   onDeleteClick, onDeleteConfirm, onDeleteCancel,
 }: UsersPageProps) => {
   const memberCount = users.length;
@@ -28,7 +28,7 @@ const UsersPage = ({
       ) : users.length === 0 ? (
         <ListEmpty icon={UserRound} title="No users yet" description="Tap the + button to create your first user" />
       ) : (
-        <UserList users={users} onUserClick={onUserClick} />
+        <UserList users={users} onEditUser={onEditUser} onDeleteUser={onDeleteUser} />
       )}
 
       <Fab onClick={onCreateClick} label="Create user" />

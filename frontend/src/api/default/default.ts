@@ -22,6 +22,8 @@ import type {
 import { api } from '../../lib/axios';
 
 
+type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
+
 
 
 /**
@@ -69,16 +71,16 @@ export const getHealthApiV1HealthGetQueryKey = () => {
     }
 
     
-export const getHealthApiV1HealthGetQueryOptions = <TData = Awaited<ReturnType<typeof healthApiV1HealthGet>>, TError = unknown>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof healthApiV1HealthGet>>, TError, TData>>, }
+export const getHealthApiV1HealthGetQueryOptions = <TData = Awaited<ReturnType<typeof healthApiV1HealthGet>>, TError = unknown>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof healthApiV1HealthGet>>, TError, TData>>, request?: SecondParameter<typeof api>}
 ) => {
 
-const {query: queryOptions} = options ?? {};
+const {query: queryOptions, request: requestOptions} = options ?? {};
 
   const queryKey =  queryOptions?.queryKey ?? getHealthApiV1HealthGetQueryKey();
 
   
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof healthApiV1HealthGet>>> = ({ signal }) => healthApiV1HealthGet({ signal });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof healthApiV1HealthGet>>> = ({ signal }) => healthApiV1HealthGet({ signal, ...requestOptions });
 
       
 
@@ -98,7 +100,7 @@ export function useHealthApiV1HealthGet<TData = Awaited<ReturnType<typeof health
           TError,
           Awaited<ReturnType<typeof healthApiV1HealthGet>>
         > , 'initialData'
-      >, }
+      >, request?: SecondParameter<typeof api>}
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 export function useHealthApiV1HealthGet<TData = Awaited<ReturnType<typeof healthApiV1HealthGet>>, TError = unknown>(
@@ -108,11 +110,11 @@ export function useHealthApiV1HealthGet<TData = Awaited<ReturnType<typeof health
           TError,
           Awaited<ReturnType<typeof healthApiV1HealthGet>>
         > , 'initialData'
-      >, }
+      >, request?: SecondParameter<typeof api>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 export function useHealthApiV1HealthGet<TData = Awaited<ReturnType<typeof healthApiV1HealthGet>>, TError = unknown>(
-  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof healthApiV1HealthGet>>, TError, TData>>, }
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof healthApiV1HealthGet>>, TError, TData>>, request?: SecondParameter<typeof api>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
@@ -120,7 +122,7 @@ export function useHealthApiV1HealthGet<TData = Awaited<ReturnType<typeof health
  */
 
 export function useHealthApiV1HealthGet<TData = Awaited<ReturnType<typeof healthApiV1HealthGet>>, TError = unknown>(
-  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof healthApiV1HealthGet>>, TError, TData>>, }
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof healthApiV1HealthGet>>, TError, TData>>, request?: SecondParameter<typeof api>}
  , queryClient?: QueryClient 
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 

@@ -12,6 +12,7 @@ import { Toaster } from "@/ui/sonner";
 
 const PAGE_TITLES: Record<string, string> = {
   "/": "Home",
+  "/exercises": "Exercise Library",
   "/admin/users": "Users",
 };
 
