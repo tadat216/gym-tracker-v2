@@ -352,9 +352,7 @@ function ColorPicker({ value, onChange, previewLabel, className }: ColorPickerPr
 
       {/* Preview */}
       <div className="flex items-center gap-2.5">
-        <span className="text-[11px] font-bold uppercase tracking-[1px] text-muted-foreground">
-          Preview
-        </span>
+        <span className="text-[11px] font-bold uppercase tracking-[1px] text-muted-foreground">Preview</span>
         <span
           className="rounded-full px-3.5 py-1 text-xs font-semibold text-white"
           style={{ background: hex }}
@@ -745,6 +743,9 @@ import { FormField } from "@/ui/form-field";
 import { ColorPicker } from "@/ui/color-picker";
 import type { MuscleGroupFormSheetProps } from "../types";
 
+// Reuse FormField's label classes for non-Input fields (Color)
+const fieldLabelClass = "mb-1.5 block text-[11px] font-bold uppercase tracking-[1px] text-muted-foreground";
+
 const MuscleGroupFormSheet = ({
   mode, open, values, isSubmitting, error,
   onChange, onSubmit, onClose, onDeleteClick,
@@ -763,9 +764,7 @@ const MuscleGroupFormSheet = ({
           error={error ?? undefined}
         />
         <div>
-          <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-[1px] text-muted-foreground">
-            Color
-          </label>
+          <label className={fieldLabelClass}>Color</label>
           <ColorPicker value={values.color} onChange={(v) => onChange("color", v)} previewLabel={values.name || "Sample"} />
         </div>
       </div>
@@ -1035,6 +1034,7 @@ git commit -m "feat: add exercise types and hooks"
 ```tsx
 // frontend/src/components/exercise-library/exercises/views/exercise-list/exercise-row.tsx
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/ui/dropdown-menu";
+import { Badge } from "@/ui/badge";
 import { Button } from "@/ui/button";
 import { Ellipsis, Pencil, Trash2 } from "lucide-react";
 import type { ExerciseRowProps } from "../../types";
@@ -1045,9 +1045,7 @@ const ExerciseRow = ({ exercise, color, onEdit, onDelete }: ExerciseRowProps) =>
       <div className="min-w-0 flex-1">
         <span className="text-[15px] font-bold text-foreground">{exercise.name}</span>
       </div>
-      <span className="shrink-0 rounded-full bg-secondary px-2.5 py-0.5 text-xs font-medium text-secondary-foreground">
-        {exercise.type}
-      </span>
+      <Badge variant="secondary">{exercise.type}</Badge>
       <DropdownMenu>
         <DropdownMenuTrigger render={<Button variant="ghost" size="icon-xs" aria-label="Actions" />}>
           <Ellipsis className="size-4" />
@@ -1128,8 +1126,12 @@ Check the generated `ExerciseType` enum values from `frontend/src/api/model/`. B
 import { Button } from "@/ui/button";
 import { FormSheet } from "@/ui/form-sheet";
 import { FormField } from "@/ui/form-field";
+import { Input } from "@/ui/input";
 import { SegmentedToggle } from "@/ui/segmented-toggle";
 import type { ExerciseFormSheetProps } from "../types";
+
+// Reuse FormField's label classes for non-Input fields (Type, Muscle Group)
+const fieldLabelClass = "mb-1.5 block text-[11px] font-bold uppercase tracking-[1px] text-muted-foreground";
 
 const TYPE_OPTIONS = [
   { value: "weight" as const, label: "Weight" },
@@ -1155,15 +1157,11 @@ const ExerciseFormSheet = ({
           error={error ?? undefined}
         />
         <div>
-          <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-[1px] text-muted-foreground">
-            Type
-          </label>
+          <label className={fieldLabelClass}>Type</label>
           <SegmentedToggle options={TYPE_OPTIONS} value={values.type} onChange={(v) => onChange("type", v)} />
         </div>
         <div>
-          <label htmlFor="ex-muscle-group" className="mb-1.5 block text-[11px] font-bold uppercase tracking-[1px] text-muted-foreground">
-            Muscle Group
-          </label>
+          <label htmlFor="ex-muscle-group" className={fieldLabelClass}>Muscle Group</label>
           <select
             id="ex-muscle-group"
             value={values.muscleGroupId ?? ""}
