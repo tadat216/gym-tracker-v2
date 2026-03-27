@@ -9,11 +9,18 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from "./routes/__root"
+import { Route as PlansRouteImport } from "./routes/plans"
 import { Route as LoginRouteImport } from "./routes/login"
 import { Route as ExercisesRouteImport } from "./routes/exercises"
 import { Route as IndexRouteImport } from "./routes/index"
+import { Route as PlansPlanIdRouteImport } from "./routes/plans_.$planId"
 import { Route as AdminUsersRouteImport } from "./routes/admin/users"
 
+const PlansRoute = PlansRouteImport.update({
+  id: "/plans",
+  path: "/plans",
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LoginRoute = LoginRouteImport.update({
   id: "/login",
   path: "/login",
@@ -29,6 +36,11 @@ const IndexRoute = IndexRouteImport.update({
   path: "/",
   getParentRoute: () => rootRouteImport,
 } as any)
+const PlansPlanIdRoute = PlansPlanIdRouteImport.update({
+  id: "/plans_/$planId",
+  path: "/plans/$planId",
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminUsersRoute = AdminUsersRouteImport.update({
   id: "/admin/users",
   path: "/admin/users",
@@ -39,38 +51,72 @@ export interface FileRoutesByFullPath {
   "/": typeof IndexRoute
   "/exercises": typeof ExercisesRoute
   "/login": typeof LoginRoute
+  "/plans": typeof PlansRoute
   "/admin/users": typeof AdminUsersRoute
+  "/plans/$planId": typeof PlansPlanIdRoute
 }
 export interface FileRoutesByTo {
   "/": typeof IndexRoute
   "/exercises": typeof ExercisesRoute
   "/login": typeof LoginRoute
+  "/plans": typeof PlansRoute
   "/admin/users": typeof AdminUsersRoute
+  "/plans/$planId": typeof PlansPlanIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   "/": typeof IndexRoute
   "/exercises": typeof ExercisesRoute
   "/login": typeof LoginRoute
+  "/plans": typeof PlansRoute
   "/admin/users": typeof AdminUsersRoute
+  "/plans_/$planId": typeof PlansPlanIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: "/" | "/exercises" | "/login" | "/admin/users"
+  fullPaths:
+    | "/"
+    | "/exercises"
+    | "/login"
+    | "/plans"
+    | "/admin/users"
+    | "/plans/$planId"
   fileRoutesByTo: FileRoutesByTo
-  to: "/" | "/exercises" | "/login" | "/admin/users"
-  id: "__root__" | "/" | "/exercises" | "/login" | "/admin/users"
+  to:
+    | "/"
+    | "/exercises"
+    | "/login"
+    | "/plans"
+    | "/admin/users"
+    | "/plans/$planId"
+  id:
+    | "__root__"
+    | "/"
+    | "/exercises"
+    | "/login"
+    | "/plans"
+    | "/admin/users"
+    | "/plans_/$planId"
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ExercisesRoute: typeof ExercisesRoute
   LoginRoute: typeof LoginRoute
+  PlansRoute: typeof PlansRoute
   AdminUsersRoute: typeof AdminUsersRoute
+  PlansPlanIdRoute: typeof PlansPlanIdRoute
 }
 
 declare module "@tanstack/react-router" {
   interface FileRoutesByPath {
+    "/plans": {
+      id: "/plans"
+      path: "/plans"
+      fullPath: "/plans"
+      preLoaderRoute: typeof PlansRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     "/login": {
       id: "/login"
       path: "/login"
@@ -92,6 +138,13 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    "/plans_/$planId": {
+      id: "/plans_/$planId"
+      path: "/plans/$planId"
+      fullPath: "/plans/$planId"
+      preLoaderRoute: typeof PlansPlanIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     "/admin/users": {
       id: "/admin/users"
       path: "/admin/users"
@@ -106,7 +159,9 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ExercisesRoute: ExercisesRoute,
   LoginRoute: LoginRoute,
+  PlansRoute: PlansRoute,
   AdminUsersRoute: AdminUsersRoute,
+  PlansPlanIdRoute: PlansPlanIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
