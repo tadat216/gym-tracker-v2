@@ -18,6 +18,11 @@ const UsersContainer = () => {
     form.openEdit(user);
   };
 
+  const handleDeleteUser = (user: UserRead) => {
+    form.openEdit(user);
+    setDeleteConfirmOpen(true);
+  };
+
   const handleCreateClick = () => {
     setSubmitError(null);
     form.openCreate();
@@ -72,7 +77,7 @@ const UsersContainer = () => {
       isSubmitting={data.isCreating || data.isUpdating}
       isSelfSelected={isSelfSelected} submitError={submitError}
       isDeleting={data.isDeleting} deleteConfirmOpen={deleteConfirmOpen}
-      onCreateClick={handleCreateClick} onUserClick={handleUserClick}
+      onCreateClick={handleCreateClick} onUserClick={handleUserClick} onDeleteUser={handleDeleteUser}
       onFormChange={form.setField} onFormSubmit={handleFormSubmit}
       onFormClose={form.close}
       onDeleteClick={() => setDeleteConfirmOpen(true)}
