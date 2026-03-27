@@ -22,5 +22,7 @@
 | 17 | docs/superpowers/plans/2026-03-27-service-layer-refactor.md | Service layer refactor | ⬜ Pending | 16 |
 | 18 | docs/superpowers/specs/2026-03-27-exercise-library-frontend-design.md | Exercise Library frontend design spec | ✅ Done | 15 |
 | 19 | docs/superpowers/plans/2026-03-27-exercise-library-frontend.md | Exercise Library frontend implementation | ⬜ Pending | 18 |
+| 20 | docs/superpowers/specs/2026-03-27-workout-plans-crud-design.md | Workout plans CRUD design spec | ✅ Done | 15 |
+| 21 | docs/superpowers/plans/2026-03-27-workout-plans-crud.md | Workout plans CRUD implementation | ⬜ Pending | 20 |
 
 ## Status legend: ⬜ Pending | 🔄 In Progress | ✅ Done
