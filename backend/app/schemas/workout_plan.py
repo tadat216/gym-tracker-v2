@@ -24,6 +24,8 @@ class PlanExerciseRead(SQLModel):
     id: int
     exercise_id: int
     sort_order: int
+    exercise_name: str
+    muscle_group_name: str
 
 
 class WorkoutPlanRead(SQLModel):

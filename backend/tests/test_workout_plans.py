@@ -33,9 +33,7 @@ class TestListWorkoutPlans:
         assert response.status_code == 200
         assert len(response.json()) == 0
 
-    async def test_list_plans_scoped_to_user(
-        self, user_client, session, admin_user
-    ):
+    async def test_list_plans_scoped_to_user(self, user_client, session, admin_user):
         other_plan = WorkoutPlan(name="Other Plan", user_id=admin_user.id)
         session.add(other_plan)
         await session.flush()
@@ -50,9 +48,7 @@ class TestListWorkoutPlans:
 
 class TestGetWorkoutPlan:
     async def test_get_plan(self, user_client, workout_plan):
-        response = await user_client.get(
-            f"/api/v1/workout-plans/{workout_plan.id}"
-        )
+        response = await user_client.get(f"/api/v1/workout-plans/{workout_plan.id}")
         assert response.status_code == 200
         assert response.json()["name"] == "Push Day"
 
@@ -64,9 +60,7 @@ class TestGetWorkoutPlan:
         other_plan = WorkoutPlan(name="Other", user_id=admin_user.id)
         session.add(other_plan)
         await session.flush()
-        response = await user_client.get(
-            f"/api/v1/workout-plans/{other_plan.id}"
-        )
+        response = await user_client.get(f"/api/v1/workout-plans/{other_plan.id}")
         assert response.status_code == 404
 
 
@@ -89,9 +83,7 @@ class TestCreateWorkoutPlan:
         )
         assert response.status_code == 409
 
-    async def test_create_plan_reuse_deleted_name(
-        self, user_client, workout_plan
-    ):
+    async def test_create_plan_reuse_deleted_name(self, user_client, workout_plan):
         await user_client.delete(f"/api/v1/workout-plans/{workout_plan.id}")
         response = await user_client.post(
             "/api/v1/workout-plans",
@@ -132,9 +124,7 @@ class TestUpdateWorkoutPlan:
 
 class TestDeleteWorkoutPlan:
     async def test_delete_plan(self, user_client, workout_plan):
-        response = await user_client.delete(
-            f"/api/v1/workout-plans/{workout_plan.id}"
-        )
+        response = await user_client.delete(f"/api/v1/workout-plans/{workout_plan.id}")
         assert response.status_code == 200
         assert "deactivated" in response.json()["message"].lower()
 
@@ -147,9 +137,7 @@ class TestDeleteWorkoutPlan:
 
 
 class TestAddPlanExercise:
-    async def test_add_exercise_to_plan(
-        self, user_client, workout_plan, exercise
-    ):
+    async def test_add_exercise_to_plan(self, user_client, workout_plan, exercise):
         response = await user_client.post(
             f"/api/v1/workout-plans/{workout_plan.id}/exercises",
             json={"exercise_id": exercise.id, "sort_order": 0},
@@ -158,6 +146,8 @@ class TestAddPlanExercise:
         data = response.json()
         assert data["exercise_id"] == exercise.id
         assert data["sort_order"] == 0
+        assert data["exercise_name"] == "Bench Press"
+        assert data["muscle_group_name"] == "Chest"
 
     async def test_add_exercise_plan_not_found(self, user_client, exercise):
         response = await user_client.post(
@@ -200,10 +190,11 @@ class TestAddPlanExercise:
             f"/api/v1/workout-plans/{workout_plan.id}/exercises",
             json={"exercise_id": exercise.id, "sort_order": 0},
         )
-        response = await user_client.get(
-            f"/api/v1/workout-plans/{workout_plan.id}"
-        )
-        assert len(response.json()["exercises"]) == 1
+        response = await user_client.get(f"/api/v1/workout-plans/{workout_plan.id}")
+        exercises = response.json()["exercises"]
+        assert len(exercises) == 1
+        assert exercises[0]["exercise_name"] == "Bench Press"
+        assert exercises[0]["muscle_group_name"] == "Chest"
 
 
 class TestRemovePlanExercise:
@@ -224,14 +215,10 @@ class TestRemovePlanExercise:
         assert "removed" in response.json()["message"].lower()
 
     async def test_remove_exercise_plan_not_found(self, user_client):
-        response = await user_client.delete(
-            "/api/v1/workout-plans/99999/exercises/1"
-        )
+        response = await user_client.delete("/api/v1/workout-plans/99999/exercises/1")
         assert response.status_code == 404
 
-    async def test_remove_exercise_not_in_plan(
-        self, user_client, workout_plan
-    ):
+    async def test_remove_exercise_not_in_plan(self, user_client, workout_plan):
         response = await user_client.delete(
             f"/api/v1/workout-plans/{workout_plan.id}/exercises/99999"
         )
@@ -240,7 +227,12 @@ class TestRemovePlanExercise:
 
 class TestReorderPlanExercises:
     async def test_reorder_exercises(
-        self, user_client, workout_plan, exercise, session, regular_user,
+        self,
+        user_client,
+        workout_plan,
+        exercise,
+        session,
+        regular_user,
         muscle_group,
     ):
         ex2 = Exercise(
@@ -255,9 +247,7 @@ class TestReorderPlanExercises:
         pe1 = PlanExercise(
             plan_id=workout_plan.id, exercise_id=exercise.id, sort_order=0
         )
-        pe2 = PlanExercise(
-            plan_id=workout_plan.id, exercise_id=ex2.id, sort_order=1
-        )
+        pe2 = PlanExercise(plan_id=workout_plan.id, exercise_id=ex2.id, sort_order=1)
         session.add_all([pe1, pe2])
         await session.flush()
 

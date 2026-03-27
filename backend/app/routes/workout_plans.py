@@ -24,14 +24,14 @@ from app.services.workout_plan import WorkoutPlanService
 router = APIRouter(prefix="/api/v1/workout-plans", tags=["workout-plans"])
 
 
-def _to_plan_read(plan, exercises) -> WorkoutPlanRead:
+def _to_plan_read(plan, exercises: list[PlanExerciseRead]) -> WorkoutPlanRead:
     return WorkoutPlanRead(
         id=plan.id,
         name=plan.name,
         is_active=plan.is_active,
         created_at=plan.created_at,
         updated_at=plan.updated_at,
-        exercises=[PlanExerciseRead.model_validate(e) for e in exercises],
+        exercises=exercises,
     )
 
 
@@ -141,7 +141,7 @@ async def add_plan_exercise(
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     except InvalidReferenceError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
-    return PlanExerciseRead.model_validate(pe)
+    return pe
 
 
 @router.patch(
