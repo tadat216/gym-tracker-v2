@@ -6,3 +6,4 @@ export * from './muscle-groups/muscle-groups';
 export * from './exercises/exercises';
 export * from './admin-muscle-groups/admin-muscle-groups';
 export * from './admin-exercises/admin-exercises';
+export * from './workout-plans/workout-plans';

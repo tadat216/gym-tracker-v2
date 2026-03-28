@@ -15,7 +15,7 @@ from app.routes.exercises import router as exercises_router
 from app.routes.muscle_groups import router as muscle_groups_router
 from app.routes.users import router as users_router
 from app.routes.workout_plans import router as workout_plans_router
-from app.seed import create_system_user
+from app.seed import create_system_user, seed_test_user
 
 
 @asynccontextmanager
@@ -38,6 +38,9 @@ async def lifespan(app: FastAPI):
             session.add(admin)
 
         await session.commit()
+
+    async with async_session() as session:
+        await seed_test_user(session)
 
     yield
 
