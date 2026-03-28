@@ -15,6 +15,7 @@ from app.routes.exercises import router as exercises_router
 from app.routes.muscle_groups import router as muscle_groups_router
 from app.routes.users import router as users_router
 from app.routes.workout_plans import router as workout_plans_router
+from app.routes.workout_sessions import router as workout_sessions_router
 from app.seed import create_system_user, seed_test_user
 
 
@@ -62,6 +63,7 @@ app.include_router(exercises_router)
 app.include_router(admin_muscle_groups_router)
 app.include_router(admin_exercises_router)
 app.include_router(workout_plans_router)
+app.include_router(workout_sessions_router)
 
 
 @app.get("/api/v1/health")
