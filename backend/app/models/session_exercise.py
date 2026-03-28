@@ -3,6 +3,8 @@ import enum
 from sqlmodel import Field, SQLModel
 
 
+# DEPRECATED: status field is kept for DB compatibility but exercise completion
+# is now derived from sets (all sets completed = exercise completed).
 class ExerciseStatus(enum.StrEnum):
     PENDING = "pending"
     COMPLETED = "completed"
