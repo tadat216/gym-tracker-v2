@@ -223,33 +223,29 @@ SEED_PLANS = [
 async def seed_test_user(session: AsyncSession) -> None:
     """Create a test user with workout plans. Deletes and recreates if exists."""
     # Delete existing test user and all related data
-    result = await session.execute(
-        select(User).where(User.username == SEED_USERNAME)
-    )
+    result = await session.execute(select(User).where(User.username == SEED_USERNAME))
     existing = result.scalar_one_or_none()
     if existing is not None:
         uid = existing.id
         # Delete plan exercises via plans owned by this user
         user_plans = (
-            await session.execute(
-                select(WorkoutPlan.id).where(WorkoutPlan.user_id == uid)
+            (
+                await session.execute(
+                    select(WorkoutPlan.id).where(WorkoutPlan.user_id == uid)
+                )
             )
-        ).scalars().all()
+            .scalars()
+            .all()
+        )
         if user_plans:
             await session.execute(
                 delete(PlanExercise).where(
                     PlanExercise.plan_id.in_(user_plans)  # type: ignore[union-attr]
                 )
             )
-        await session.execute(
-            delete(WorkoutPlan).where(WorkoutPlan.user_id == uid)
-        )
-        await session.execute(
-            delete(Exercise).where(Exercise.user_id == uid)
-        )
-        await session.execute(
-            delete(MuscleGroup).where(MuscleGroup.user_id == uid)
-        )
+        await session.execute(delete(WorkoutPlan).where(WorkoutPlan.user_id == uid))
+        await session.execute(delete(Exercise).where(Exercise.user_id == uid))
+        await session.execute(delete(MuscleGroup).where(MuscleGroup.user_id == uid))
         await session.delete(existing)
         await session.flush()
 
@@ -263,9 +259,7 @@ async def seed_test_user(session: AsyncSession) -> None:
     await session.flush()
 
     # Copy default muscle groups and exercises
-    system_result = await session.execute(
-        select(User).where(User.username == "system")
-    )
+    system_result = await session.execute(select(User).where(User.username == "system"))
     system_user = system_result.scalar_one_or_none()
     if system_user is None:
         system_user = await create_system_user(session)
@@ -275,8 +269,10 @@ async def seed_test_user(session: AsyncSession) -> None:
 
     # Build exercise name → id map for this user
     user_exercises = (
-        await session.execute(select(Exercise).where(Exercise.user_id == user.id))
-    ).scalars().all()
+        (await session.execute(select(Exercise).where(Exercise.user_id == user.id)))
+        .scalars()
+        .all()
+    )
     exercise_map = {ex.name: ex.id for ex in user_exercises}
 
     # Create workout plans

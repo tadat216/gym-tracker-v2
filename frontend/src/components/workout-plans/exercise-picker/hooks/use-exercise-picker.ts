@@ -10,16 +10,15 @@ export function useExercisePicker(alreadyInPlanExerciseIds: Set<number>) {
   const exercisesQuery = useListExercises();
   const muscleGroupsQuery = useListMuscleGroups();
 
-  const allExercises = exercisesQuery.data?.data ?? [];
-  const allMuscleGroups = muscleGroupsQuery.data?.data ?? [];
-
   const mgNameById = useMemo(() => {
+    const allMuscleGroups = muscleGroupsQuery.data?.data ?? [];
     const map = new Map<number, string>();
     for (const mg of allMuscleGroups) map.set(mg.id, mg.name);
     return map;
-  }, [allMuscleGroups]);
+  }, [muscleGroupsQuery.data?.data]);
 
   const groups: ExerciseGroup[] = useMemo(() => {
+    const allExercises = exercisesQuery.data?.data ?? [];
     const query = searchQuery.toLowerCase();
     const filtered = allExercises.filter(
       (ex) => !query || ex.name.toLowerCase().includes(query),
@@ -34,7 +33,7 @@ export function useExercisePicker(alreadyInPlanExerciseIds: Set<number>) {
       byGroup.get(groupName)!.exercises.push(ex);
     }
     return Array.from(byGroup.values());
-  }, [allExercises, mgNameById, searchQuery]);
+  }, [exercisesQuery.data?.data, mgNameById, searchQuery]);
 
   const toggleSelection = useCallback((exerciseId: number) => {
     setSelectedIds((prev) => {
